@@ -17,7 +17,6 @@ file = 'apps/calculator.py'
 
 [[app]]
 file = 'apps/heart.py'
-quick_ring = true
 
 #[[app]]
 #file = 'apps/bubble_font.py'
