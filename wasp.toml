@@ -2,6 +2,22 @@
 # At least one watch face must be specified. Quick ring apps will be added in order.
 
 [[app]]
+file = 'apps/space_font.py'
+auto_load = true
+
+#[[app]]
+#file = 'apps/bubble_font.py'
+#auto_load = true
+
+#[[app]]
+#file = 'apps/scifi_font.py'
+#auto_load = true
+
+#[[app]]
+#file = 'apps/digi_font.py'
+#auto_load = true
+
+[[app]]
 file = 'apps/stopwatch.py'
 quick_ring = true
 
@@ -37,3 +53,6 @@ default = true
 
 [[watchface]]
 file = 'watch_faces/chrono.py'
+
+[[watchface]]
+file = 'watch_faces/monolith.py'
