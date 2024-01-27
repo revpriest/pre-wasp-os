@@ -1,3 +1,91 @@
+This Fork
+=========
+
+Forked by Pre, hopefully will submit pull requests for all
+this at some point.
+
+We add a monolithic watch-face which has:
+
+  * Clock
+    * Funky font time, using companion font apps
+    * day, date, month, year
+    * seconds
+    * Half-second flashing colon
+    * Change color
+    * Keep-alive during charging to act as a clock
+  * built-in stopwatch and timer
+  * show heart-rate 
+    * allows regular sampling and logging
+  * Show step-counts
+    * allows setting a lap-counter for specific trips
+    * change reset-schedule (Will need to disable default step-logger)
+    * log in 5/15/60 minute chunks to a daily csv
+  * Stats-page 
+    * free-storage,
+    * free-ram, 
+    * battery-percent
+    * Shows scheduled reset/log-rotate time
+  * Shake-to-wake system
+  * Integration with the mood logging app to show
+    the latest mood as a face too.
+  * Compensates for steps missed before reboot
+
+.. image:: res/screenshots/MonolithAppApp.png
+   :alt: Pre's Monolothic face 
+   :width: 233
+
+
+Mood App
+========
+
+We also add a mood and activity tracking app. Swipe
+left to see the mood-face. Touching that sets it's
+smile and eyes to indicate happiness and wakefullness.
+Select an activity from a list and save to mark
+what you've been doing.
+
+This generates a CSV for each day describing
+what you were doing and how you felt while
+doing it.
+
+It also generates the mood-face which can be
+displayed on the monolithic watch-face app.
+
+.. image:: res/screenshots/MoodApp.png
+   :alt: Pre's Monolothic face 
+   :width: 233
+
+
+Between them these two take up most of the space
+and there isn't really any room for the WaspOS
+step-tracker or shockingly RAM hungry settings app.
+
+Neither are really needed since the monolithic face
+UI has settings for brightness and setting time/date
+anyway, and it also does a good job of controlling the
+step-counter hardware.
+
+In fact the step-counter is not really even compatible
+with the face since the face allows changing the 
+nightly reset-counter time, to 4am say, so you don't
+wake up each morning with two hours of post-midnight
+pacing around on your counter. And the step-counter app
+will continue to reset it at midnight.
+
+So these are commented out for now.
+
+Computer App
+============
+
+Generating the logs is all very well but what to do with them?
+
+Download them onto the computer and graph them with Libre Office Calc,
+they are after all just (specially formatted) CSV files.
+
+Some kind of syncing and graphing app would be nice,
+hopefully I'll write that soon.
+
+
 Watch Application System in Python
 ==================================
 
