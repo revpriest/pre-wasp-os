@@ -30,7 +30,7 @@ We add a monolithic watch-face which has:
     the latest mood as a face too.
   * Compensates for steps missed before reboot
 
-.. image:: res/screenshots/MonolithAppApp.png
+.. image:: res/screenshots/MonolithApp.png
    :alt: Pre's Monolothic face 
    :width: 233
 
