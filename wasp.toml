@@ -11,24 +11,21 @@ auto_load = true
 
 [[app]]
 file = 'apps/bubble_font.py'
-#auto_load = true
 
 [[app]]
 file = 'apps/scifi_font.py'
-#auto_load = true
 
 [[app]]
 file = 'apps/digi_font.py'
-#auto_load = true
 
 [[app]]
 file = 'apps/snake.py'
 
 [[app]]
-file = 'apps/calculator.py'
-
-[[app]]
 file = 'apps/heart.py'
+
+#[[app]]
+#file = 'apps/calculator.py'
 
 #[[app]]
 #file = 'apps/stopwatch.py'
