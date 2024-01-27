@@ -165,6 +165,10 @@ Watch faces:
    :alt: An other clock application running in the wasp-os simulator
    :width: 179
 
+.. image:: res/screenshots/MonolithApp.png
+   :alt: A watch with a smiling emoji face and digital time and other functions
+   :width: 179
+
 .. image:: res/screenshots/FibonacciClockApp.png
    :alt: Fibonacci clock application running in the wasp-os simulator
    :width: 179
