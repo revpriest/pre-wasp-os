@@ -1,5 +1,5 @@
 """Monolith clock
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 It's Pre's mega-face! We do it all:
  
