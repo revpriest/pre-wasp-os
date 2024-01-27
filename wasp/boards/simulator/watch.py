@@ -35,6 +35,7 @@ class Accelerometer:
     is written in C. For that reason we simulate the accelerometer
     rather than emulate (by comparison we emulate the ST7789).
     """
+    _steps = 3
     def reset(self):
         self._steps = 3
 
