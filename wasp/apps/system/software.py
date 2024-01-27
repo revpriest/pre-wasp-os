@@ -119,6 +119,8 @@ class SoftwareApp():
                     for app in wasp.system.launcher_ring:
                         if type(app).__name__.startswith(label):
                             wasp.system.launcher_ring.remove(app)
+                            if(hasattr(app,"unregister")):
+                                app.unregister()
                             break
                 break
 
