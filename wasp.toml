@@ -21,6 +21,9 @@ auto_load = true
 file = 'apps/calculator.py'
 
 [[app]]
+file = 'apps/mood.py'
+
+[[app]]
 file = 'apps/disa_b_l_e.py'
 
 [[app]] # If only one watch face is included this app can be removed

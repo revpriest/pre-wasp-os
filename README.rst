@@ -246,6 +246,10 @@ Other apps: (The "blank" white screenshot is a flashlight app)
    :alt: Calculator running in the wasp-os simulator
    :width: 179
 
+.. image:: res/screenshots/MoodApp.png
+   :alt: A mood-logging app and time-tracker
+   :width: 179
+
 .. image:: res/screenshots/DemoApp.png
    :alt: Simple always-on demo for showing off wasp-os at conferences and shows
    :width: 179
