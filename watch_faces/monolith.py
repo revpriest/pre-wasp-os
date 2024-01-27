@@ -844,7 +844,7 @@ class MonolithApp():
        self._cornerbuttons(("colour","stats",
                             "font","file"),
                          (self._butpickcol, self._butstats,
-                          self._butfont,self._butfile ))
+                          self._butfont, self._butfile))
 
     def _taptopright(self):
         stsp = "start"

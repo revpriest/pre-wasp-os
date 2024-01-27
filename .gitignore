@@ -15,4 +15,5 @@ wasp/appregistry.py
 .idea
 .vscode
 activities.csv
+preferences.csv
 logs/
