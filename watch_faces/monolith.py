@@ -842,9 +842,9 @@ class MonolithApp():
 
     def _taptopleft(self):
        self._cornerbuttons(("colour","stats",
-                            "font","steplog"),
+                            "font","file"),
                          (self._butpickcol, self._butstats,
-                          self._butfont, self._butsteplogfreq))
+                          self._butfont,self._butfile ))
 
     def _taptopright(self):
         stsp = "start"
@@ -866,9 +866,9 @@ class MonolithApp():
         s = "show"
         if(self._wordvars[_SHOWMOOD]==1):
             s="hide"
-        self._cornerbuttons(("file",s,
+        self._cornerbuttons(("steplog",s,
                              "lap","reset"),
-                          (self._butfile,self._butmoodshow,
+                          (self._butsteplogfreq,self._butmoodshow,
                            self._butlap, self._butreset))
           
     def _tapbotright(self):
