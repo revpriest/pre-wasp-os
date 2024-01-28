@@ -1,7 +1,10 @@
 """Monolith clock
 ~~~~~~~~~~~~~~~~
 
-It's Pre's mega-face! We do it all:
+It's Pre's mega-face! We do it all
+and use lots of ram to do it. You
+will be limited how many other apps
+you can run along side this one.
  
 .. figure:: res/screenshots/MonolithApp.png
     :width: 179
@@ -1116,7 +1119,7 @@ class MonolithApp():
             pass
 
         try:
-            bat = "B"+str(wasp.watch.battery.level())+"%"
+            bat = "B:"+str(wasp.watch.battery.level())+"%"
         except:
             bat = "x"
             pass
@@ -1126,7 +1129,7 @@ class MonolithApp():
             fs = os.statvfs("/flash")
             free = fs[0] * fs[4]
             total = fs[0] * fs[4]
-            disk = "D"+str(100-int(100.0*(free/total)))
+            disk = "D:"+str(100-int(100.0*(free/total)))+"%"
             del os
             gc.collect()
         except:
