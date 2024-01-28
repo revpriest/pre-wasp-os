@@ -1,9 +1,6 @@
 This Fork
 =========
 
-Forked by Pre, hopefully will submit pull requests for all
-this at some point.
-
 We add a monolithic watch-face which has:
 
   * Clock
@@ -74,16 +71,9 @@ will continue to reset it at midnight.
 
 So these are commented out for now.
 
-Computer App
-============
+You can read a description of all the functions
+in this blog post: https://dalliance.net/vPre2/waspos
 
-Generating the logs is all very well but what to do with them?
-
-Download them onto the computer and graph them with Libre Office Calc,
-they are after all just (specially formatted) CSV files.
-
-Some kind of syncing and graphing app would be nice,
-hopefully I'll write that soon.
 
 
 Watch Application System in Python
