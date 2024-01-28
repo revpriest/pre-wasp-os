@@ -253,7 +253,7 @@ class MonolithApp():
     #Write a string to the step-log.
     #We create a new one with a date-header if it's blank
     def _writesteplog(self,strtowrite=None,timestowrite=1):
-        gc.collect()
+        self._mkdirs()
         if(strtowrite==None):
           strtowrite = self._longvars[_STEPCOUNT]
           if(strtowrite>=self._longvars[_STEPSATLASTLOG]):
@@ -267,8 +267,8 @@ class MonolithApp():
               for i in range(0,timestowrite):
                 file.write(strtowrite)
         except Exception as e:  # Didn't exist?
-            #print("Can't open "+str(self._steplogname()+" as a 'a'")+":"+str(e))
-            wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":"LogFail","body":"Can't write step-log file."})
+            print("StepLogExcep3:"+str(e))
+            wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":"LogFail","body":"Can't write step-log file:"+str(e)})
         self._longvars[_STEPSATLASTLOG] = self._longvars[_STEPCOUNT]
         gc.collect()
 
@@ -317,9 +317,23 @@ class MonolithApp():
             x=0
           self._wordvars[_LASTHEARTRATE]=x
           self._longvars[_LASTHEARTRATETIME] = self._longvars[_TIMESTAMP]
+          self._saveheartlog()
           self._stopheartrecording()
         gc.collect()
 
+    def _saveheartlog(self):
+        self._mkdirs()
+        if((self._wordvars[_LASTHEARTRATE]!=None)and(self._wordvars[_LASTHEARTRATE]>10)and(self._wordvars[_LASTHEARTRATE]<500)):
+            try:
+              fn = "/flash/logs/{:04d}/heart/{:04d}-{:02d}-{:02d}_heartlog.csv".format(self._now[0],self._now[0],self._now[1],self._now[2])
+              with open(fn, 'a') as file:
+                file.write("{:04d}-{:02d}-{:02d} {:02d}:{:02d},{:03d}\n".format(
+                            self._now[0],self._now[1],self._now[2],self._now[3],self._now[4],self._wordvars[_LASTHEARTRATE]))
+            except Exception as e:
+                wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":"Exception","body":"Can't write heart log: "+str(e)})
+                print("HeartSaveExcep:"+str(e))
+
+        gc.collect()
 
     def _stopheartrecording(self):
         wasp.watch.hrs.disable()
@@ -720,10 +734,10 @@ class MonolithApp():
         pass
 
 
-    def _savepreferences(self):
-        #Make sure log dirs exist.
+    def _mkdirs(self):
         gc.collect()
-        s = 'logs/{:04d}'.format(self._now[0])
+        s = '/flash/logs/{:04d}'.format(self._now[0])
+        import os
         try:
           os.mkdir(s)
         except Exception as e:
@@ -736,8 +750,12 @@ class MonolithApp():
           os.mkdir(s+'/steps')
         except Exception as e:
           pass
-
+        del(os)
         gc.collect()
+
+    def _savepreferences(self):
+        #Make sure log dirs exist.
+        self._mkdirs()
         with open("/flash/preferences.csv", 'w') as dest:
           for i in range(0,_MAXSAVED):
             dest.write(str(self._wordvars[i]))
