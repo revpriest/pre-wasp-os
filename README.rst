@@ -4,27 +4,34 @@ This Fork
 We add a monolithic watch-face which has:
 
 * Clock
-  * Funky font time, using companion font apps
-  * day, date, month, year
-  * seconds
-  * Half-second flashing colon
-  * Change color
-  * Keep-alive during charging to act as a clock
+* Funky font time, using companion font apps
+* day, date, month, year
+* seconds
+* Half-second flashing colon
+* Change color
+* Keep-alive during charging to act as a clock
+
 * built-in stopwatch and timer
+
 * show heart-rate 
-  * allows regular sampling and logging
+* allows regular sampling and logging
+
 * Show step-counts
-  * allows setting a lap-counter for specific trips
-  * change reset-schedule (Will need to disable default step-logger)
-  * log in 5/15/60 minute chunks to a daily csv
+* allows setting a lap-counter for specific trips
+* change reset-schedule (Will need to disable default step-logger)
+* log in 5/15/60 minute chunks to a daily csv
+
 * Stats-page 
-  * free-storage,
-  * free-ram, 
-  * battery-percent
-  * Shows scheduled reset/log-rotate time
+* free-storage,
+* free-ram, 
+* battery-percent
+* Shows scheduled reset/log-rotate time
+
 * Shake-to-wake system
+
 * Integration with the mood logging app to show
   the latest mood as a face too.
+
 * Compensates for steps missed before reboot
 
 .. image:: res/screenshots/MonolithApp.png
