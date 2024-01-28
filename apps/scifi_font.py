@@ -125,11 +125,11 @@ class ScifiFontApp():
     def __init__(self):
         if(not hasattr(wasp,"fonts")): 
             wasp.fonts = {}
-        wasp.fonts['scifi'] = (3,SCIFIFONT_DIGITS)   #ID:3. Please use random > 100 for user-fonts
+        wasp.fonts['Scifi'] = (3,SCIFIFONT_DIGITS)   #ID:3. Please use random > 100 for user-fonts
         pass
 
     def unregister(self):
-        del(wasp.fonts['scifi'])
+        del(wasp.fonts['Scifi'])
 
     def foreground(self):
         self._draw()
