@@ -722,6 +722,8 @@ class MonolithApp():
             while(i < _MAXSAVED):
                 char = file.read(1)
                 if char == '' or char == ',':  # End of file or comma
+                    if(field==""):
+                        field="0"
                     self._wordvars[i]=int(field)
                     i+=1
                     field = ''
