@@ -675,7 +675,7 @@ class MonolithApp():
         tsptr[3]= tsptr[4]= tsptr[5]=0
         tsptr = int(time.mktime(tuple(tsptr)))
         sec=0
-        self._longvars[_MISSEDSTEPS]=0
+        cnt=0
         try:
             try:
                 with open(self._steplogname(), 'r') as file:
@@ -688,7 +688,7 @@ class MonolithApp():
                                 pass    #skip date-field
                             else:
                                 if((sec/60/60)>=self._wordvars[_LOGROTTIME]):
-                                    self._longvars[_MISSEDSTEPS]+=int(field)
+                                    cnt+=int(field)
                             tsptr +=self._wordvars[_STEPLOGFREQ]*60
                             sec+=self._wordvars[_STEPLOGFREQ]*60
                             field = '0'
@@ -698,20 +698,25 @@ class MonolithApp():
             except Exception as e:
                 print("StepLoadExcep:"+str(e))
                 pass
-            if(self._longvars[_MISSEDSTEPS]<=self._longvars[_STEPCOUNT]):
-                #Obviously it's already counted
-                self._longvars[_MISSEDSTEPS]=0
+            subj = "Reload"
+            bdy = "Reloaded.\n"
+            if(self._longvars[_STEPCOUNT] < 10):
+                subj = "Reboot"
+                self._longvars[_MISSEDSTEPS]=cnt
+                bdy+= "Accounted {} steps from log\n".format(self._longvars[_MISSEDSTEPS])
+            elif(self._longvars[_MISSEDSTEPS]>0):
+                bdy+= "Still accounting {} steps from log\n".format(self._longvars[_MISSEDSTEPS])
+                 
             diff=int((self._longvars[_TIMESTAMP] - tsptr)/(self._wordvars[_STEPLOGFREQ]*60))
-            #print("Missed {} steps, filling in {} blocks".format(self._longvars[_MISSEDSTEPS],diff))
-            wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":"Reboot","body":"Restarted.\n\nMissed {} steps\n\nFilled in empty log for {} missing blocks".format(self._longvars[_MISSEDSTEPS],diff)})
-            if(diff>=0):
+            if(diff>0):
                  self._writesteplog("0,",diff)
+                 bdy += "Written {} missed blocks to catch-up log\n".format(diff)
+            wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":subj,"body":bdy})
         except Exception as e:
             print("StepLoadExcep2:"+str(e))
     
     
 
-    #
     # All prefs are word vars and they are the wordvars at the start of the array
     # We just save a single line CSV and read them in till _MAXSAVED or EOF
     def _loadpreferences(self):
