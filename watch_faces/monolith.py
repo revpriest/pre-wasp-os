@@ -1,7 +1,10 @@
 """Monolith clock
 ~~~~~~~~~~~~~~~~
 
-It's Pre's mega-face! We do it all:
+It's Pre's mega-face! We do it all
+and use lots of ram to do it. You
+will be limited how many other apps
+you can run along side this one.
  
 .. figure:: res/screenshots/MonolithApp.png
     :width: 179
@@ -492,7 +495,7 @@ class MonolithApp():
         wasp.watch.drawable.set_color(wasp.watch.drawable.darken(self._wordvars[_CLOCKCOL],8))
         wasp.watch.drawable.string("{:02d}".format(self._now[5]), 200, 94, width=40)
         if(self._lastnow[5] != self._now[5]):
-          wasp.watch.drawable.string(self._day_string(self._now), 0, 32, width=240)
+          wasp.watch.drawable.string(self._day_string(self._now), 0, 38, width=240)
 
         #Mood display?
         if((y==130) and (self._wordvars[_SHOWMOOD]==1) and (hasattr(wasp,'mood_draw'))):
@@ -848,39 +851,39 @@ class MonolithApp():
 
 
     def _taptopleft(self):
-       self._cornerbuttons(("colour","stats",
-                            "font","file"),
+       self._cornerbuttons(("Colour","Stats",
+                            "Font","File"),
                          (self._butpickcol, self._butstats,
                           self._butfont, self._butfile))
 
     def _taptopright(self):
-        stsp = "start"
+        stsp = "Start"
         if(self._longvars[_STOPWATCHTIME]>0):
             if(self._wordvars[_STOPWATCHRUN]==1):
-              stsp = "stop"
+              stsp = "Stop"
             else:
-              stsp = "reset"
-        cdown = "cdown"
+              stsp = "Reset"
+        cdown = "Cdown"
         if(self._longvars[_CDOWN] > 0):
-          cdown = "cancel"
+          cdown = "Cancel"
 
-        self._cornerbuttons(("shake",stsp,
-                            "alarm",cdown),
+        self._cornerbuttons(("Shake",stsp,
+                            "Alarm",cdown),
                          (self._butshake, self._butstopwatch,
                           self._butalarm, self._butcdown))
 
     def _tapbotleft(self):
-        s = "show"
+        s = "Show"
         if(self._wordvars[_SHOWMOOD]==1):
-            s="hide"
-        self._cornerbuttons(("steplog",s,
-                             "lap","reset"),
+            s="Hide"
+        self._cornerbuttons(("Steplog",s,
+                             "Lap","Reset"),
                           (self._butsteplogfreq,self._butmoodshow,
                            self._butlap, self._butreset))
           
     def _tapbotright(self):
         if(self._wordvars[_HEARTONOFF]==0):
-          self._cornerbuttons(("once","1m","5m","15m"),
+          self._cornerbuttons(("Once","1m","5m","15m"),
                             (self._butheartnever,self._butheart1m,
                              self._butheart5m   ,self._butheart15m))
         else:
@@ -894,7 +897,7 @@ class MonolithApp():
 
     # Control the shake-to-wake setting
     def _butshake(self):
-       self._cornerbuttons(("off","on", "vibrate","strong"),
+       self._cornerbuttons(("Off","On", "Vibrate","Strong"),
                          (self._butshake0,self._butshake1,
                           self._butshake2,self._butshake3))
     def _butshake0(self):
@@ -905,11 +908,6 @@ class MonolithApp():
         self._wordvars[_SHAKEWAKE] = 2
     def _butshake3(self):
         self._wordvars[_SHAKEWAKE] = 3
-
-    def _butnote(self):
-        wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":"Yay!","body":"You found the secret mode! Yay!"})
-        wasp.watch.vibrator.pulse(duty=20, ms=250)
-
 
     #Heart-buttons
     def _butheartnever(self):
@@ -1017,7 +1015,7 @@ class MonolithApp():
         self._draw();
 
     def _butfile(self):
-       self._cornerbuttons(("save","load", "bright","settime"),
+       self._cornerbuttons(("Save","Load", "Bright","SetTime"),
                          (self._butsave,self._butload,
                           self._butbright,self._butsetdate))
 
@@ -1102,6 +1100,9 @@ class MonolithApp():
         self._drawtimesetvalues()
 
     def _settimefinished(self):
+        self._dateset = list(self._dateset)
+        self._dateset[4] = self._wordvars[_SETTIME]
+        self._dateset[3] = self._wordvars[_SETTIMEH]
         wasp.watch.rtc.set_localtime(self._dateset)
         del(self._dateset)
         self._reset()
@@ -1118,7 +1119,7 @@ class MonolithApp():
             pass
 
         try:
-            bat = "B"+str(wasp.watch.battery.level())+"%"
+            bat = "B:"+str(wasp.watch.battery.level())+"%"
         except:
             bat = "x"
             pass
@@ -1128,7 +1129,7 @@ class MonolithApp():
             fs = os.statvfs("/flash")
             free = fs[0] * fs[4]
             total = fs[0] * fs[4]
-            disk = "D"+str(100-int(100.0*(free/total)))
+            disk = "D:"+str(100-int(100.0*(free/total)))+"%"
             del os
             gc.collect()
         except:
@@ -1141,8 +1142,8 @@ class MonolithApp():
 
     # Change screen brightness
     def _butbright(self):
-       self._cornerbuttons(("low","med",
-                          "high",""),
+       self._cornerbuttons(("Low","Med",
+                          "High",""),
                          (self._butbrightset1,self._butbrightset2,
                           self._butbrightset3,self._but))
     def _butbrightset1(self):
@@ -1157,7 +1158,7 @@ class MonolithApp():
     # Change step-log frequency
     def _butsteplogfreq(self):
        self._cornerbuttons(("5m","15m",
-                          "1h","off"),
+                          "1h","Off"),
                          (self._butsteplogfreqset5,self._butsteplogfreqset15,
                           self._butsteplogfreqset60,self._butsteplogfreqset0))
        wasp.watch.drawable.string(str(self._wordvars[_STEPLOGFREQ]), 0, 211, width=239)
@@ -1173,7 +1174,7 @@ class MonolithApp():
 
     # Change log-rot time
     def _butsetlogrottime(self): 
-       self._cornerbuttons(("midnight","4am",
+       self._cornerbuttons(("Midnight","4am",
                           "2am","6am"),
                          (self._butlogrot0, self._butlogrot4,
                           self._butlogrot2,  self._butlogrot6))
@@ -1190,12 +1191,12 @@ class MonolithApp():
 
     ##Picking color 
     def _butpickcol(self):
-        self._cornerbuttons(("red","green","blue","more"),
+        self._cornerbuttons(("Red","Green","Blue","More"),
                           (self._butcolred, self._butcolgreen,
                            self._butcolblue,self._butcolmore))
 
     def _butcolmore(self):
-        self._cornerbuttons(("yellow","cyan","purple","white"),
+        self._cornerbuttons(("Yellow","Cyan","Purple","White"),
                           (self._butcolyellow,self._butcolcyan,
                            self._butcolpurple,self._butcolwhite))
      

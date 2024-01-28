@@ -138,11 +138,11 @@ class DigiFontApp():
     def __init__(self):
         if(not hasattr(wasp,"fonts")): 
             wasp.fonts = {}
-        wasp.fonts['digi'] = (4,DIGIFONT_DIGITS)   #ID:1. Please use random > 100 for user-fonts
+        wasp.fonts['Digi'] = (4,DIGIFONT_DIGITS)   #ID:4. Please use random > 100 for user-fonts
         pass
 
     def unregister(self):
-        del(wasp.fonts['digi'])
+        del(wasp.fonts['Digi'])
 
     def foreground(self):
         self._draw()

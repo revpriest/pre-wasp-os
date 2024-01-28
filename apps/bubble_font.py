@@ -125,11 +125,11 @@ class BubbleFontApp():
     def __init__(self):
         if(not hasattr(wasp,"fonts")): 
             wasp.fonts = {}
-        wasp.fonts['bubble'] = (1,BUBBLEFONT_DIGITS)   #ID:1. Please use random > 100 for user-fonts
+        wasp.fonts['Bubble'] = (2,BUBBLEFONT_DIGITS)   #ID:2. Please use random > 100 for user-fonts
         pass
 
     def unregister(self):
-        del(wasp.fonts['bubble'])
+        del(wasp.fonts['Bubble'])
 
     def foreground(self):
         self._draw()

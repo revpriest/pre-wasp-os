@@ -134,11 +134,11 @@ class SpaceFontApp():
     def __init__(self):
         if(not hasattr(wasp,"fonts")): 
             wasp.fonts = {}
-        wasp.fonts['space'] = (2,SPACEFONT_DIGITS)   #ID:1. Please use random > 100 for user-fonts
+        wasp.fonts['Space'] = (1,SPACEFONT_DIGITS)   #ID:1. Please use random > 100 for user-fonts
         pass
 
     def unregister(self):
-        del(wasp.fonts['space'])
+        del(wasp.fonts['Space'])
 
     def foreground(self):
         self._draw()
