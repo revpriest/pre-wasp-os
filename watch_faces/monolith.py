@@ -46,21 +46,22 @@ _HEARTONOFF   = const(3)
 _HEARTINTERVAL= const(4)
 _LOGROTTIME   = const(5) 
 _SHOWMOOD     = const(6) 
-_MAXSAVED     = const(7)
+_SHAKEWAKE    = const(7) 
+_MAXSAVED     = const(8)
 
-_HEARTHASH    = const(7)
-_TICKCOUNT    = const(8)
-_ISAWAKE      = const(9)
-_SCREEN       = const(10) 
-_SCREENCNT    = const(11) 
-_STOPWATCHRUN = const(12) 
-_SETTIME      = const(13)
-_SETTIMEH     = const(14)
-_ZACCEL       = const(15)
-_FLASHBUZZTIME= const(16)
-_LASTHEARTRATE= const(17)
-_LOADATSTART  = const(18)
-_MAXVARS      = const(19) 
+_HEARTHASH    = const(8)
+_TICKCOUNT    = const(9)
+_ISAWAKE      = const(10)
+_SCREEN       = const(11) 
+_SCREENCNT    = const(12) 
+_STOPWATCHRUN = const(13) 
+_SETTIME      = const(14)
+_SETTIMEH     = const(15)
+_ZACCEL       = const(16)
+_FLASHBUZZTIME= const(17)
+_LASTHEARTRATE= const(18)
+_LOADATSTART  = const(19)
+_MAXVARS      = const(20) 
 
 #Longs too
 _TIMESTAMP                = const(0)
@@ -112,6 +113,7 @@ class MonolithApp():
             self._wordvars[_HEARTINTERVAL]=0
             self._wordvars[_LASTHEARTRATE]=0
             self._wordvars[_LOADATSTART]=1
+            self._wordvars[_SHAKEWAKE]=1
 
             self._longvars[_TIMESTAMP] = 0
             self._longvars[_STOPWATCHTIME] = 0
@@ -204,8 +206,13 @@ class MonolithApp():
           wake=True
 
         accel = wasp.watch.accel.accel_xyz()
-        if(((int(self._wordvars[_ZACCEL])-2000)>300)and(accel[2]<-800)):
-          wake=True
+        if(self._wordvars[_SHAKEWAKE]!=0):
+            if(((int(self._wordvars[_ZACCEL])-2000)>300)and(accel[2]<-800)):
+              wake=True
+              if(self._wordvars[_SHAKEWAKE]==2):
+                wasp.watch.vibrator.pulse(duty=80, ms=80)
+              elif(self._wordvars[_SHAKEWAKE]==3):
+                wasp.watch.vibrator.pulse(duty=20, ms=150)
         self._wordvars[_ZACCEL] = int(accel[2]+2000)
 
         if((self._longvars[_ALARM]>0)and(self._longvars[_TIMESTAMP] >= self._longvars[_ALARM])):
@@ -857,9 +864,9 @@ class MonolithApp():
         if(self._longvars[_CDOWN] > 0):
           cdown = "cancel"
 
-        self._cornerbuttons(("lamp",stsp,
+        self._cornerbuttons(("shake",stsp,
                             "alarm",cdown),
-                         (self._butlamp, self._butstopwatch,
+                         (self._butshake, self._butstopwatch,
                           self._butalarm, self._butcdown))
 
     def _tapbotleft(self):
@@ -885,11 +892,19 @@ class MonolithApp():
     def _but(self):
         self._switchscreen(0)
 
-    # Fake lamp with just bright buttons
-    def _butlamp(self):
-       self._cornerbuttons(("","", "",""),
-                         (self._butnote,self._but,
-                          self._but,self._but),0xffff,0xffff,60)
+    # Control the shake-to-wake setting
+    def _butshake(self):
+       self._cornerbuttons(("off","on", "vibrate","strong"),
+                         (self._butshake0,self._butshake1,
+                          self._butshake2,self._butshake3))
+    def _butshake0(self):
+        self._wordvars[_SHAKEWAKE] = 0
+    def _butshake1(self):
+        self._wordvars[_SHAKEWAKE] = 1
+    def _butshake2(self):
+        self._wordvars[_SHAKEWAKE] = 2
+    def _butshake3(self):
+        self._wordvars[_SHAKEWAKE] = 3
 
     def _butnote(self):
         wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":"Yay!","body":"You found the secret mode! Yay!"})
