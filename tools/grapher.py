@@ -17,24 +17,20 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
 
-# So. The log files are all named per days,
-# and pretty much have exactly one per day (4am to 4am for mood though, sometimes weirder)
-# Heart-log has to be read in with no timestamps other than the first
-# If I select a range of files, then I have a range of days.
-# The plot therefore needs widgets:
-#    * Serial/Parallell: Ie, overday days or line 'em up/
-#    * Day/Week -> if they're parallel at least
-
-
-
-
 class Monographer(QMainWindow):
     """ A program for getting and graphing the monolith and mood watch log data """
-    categories = ["mood","heart","steps"]
+    categories = ["steps","heart","mood"]
+    catcols = {
+      "mood:0":0xffff00,
+      "mood:1":0x006666,
+      "steps:0":0x00aa00,
+      "heart:0":0xaa0000,
+    }
 
     def __init__(self):
         """ Build the UI """
         super().__init__()
+        self.graphdata = {}
 
         self.setWindowTitle("Monographer")
 
@@ -47,7 +43,6 @@ class Monographer(QMainWindow):
         self.year_dropdown.addItems([str(year) for year in range(2024, 1980, -1)])
         toolbar.addWidget(self.year_dropdown)
 
-
         # Connect/Disconnect button
         self.connect_button = QPushButton("Connect")
         toolbar.addWidget(self.connect_button)
@@ -59,9 +54,9 @@ class Monographer(QMainWindow):
 
         # Axis-control
         self.xaxis_dropdown = QComboBox()
-        self.xaxis_dropdown.addItems(["day","week","month"])
+        self.xaxis_dropdown.addItems(["free","day","week","month"])
         toolbar.addWidget(self.xaxis_dropdown)
-        self.xaxis_dropdown.currentIndexChanged.connect(self.setup_x_axis)
+        self.xaxis_dropdown.currentIndexChanged.connect(self.redrawgraph)
 
         # Add a test button to the toolbar
         self.test_button = QPushButton("Test")
@@ -72,16 +67,30 @@ class Monographer(QMainWindow):
         self.status_bar = self.statusBar()
         self.status_bar.showMessage("Not connected")
 
+        # Create a splitter
+        mainsplitter = QSplitter(Qt.Horizontal)
+        layout = QVBoxLayout()
+        layout.addWidget(mainsplitter)
+
         # Create a tab widget
         self.tabs = QTabWidget()
-        self.setCentralWidget(self.tabs)
+        self.setCentralWidget(mainsplitter)
+        mainsplitter.addWidget(self.tabs)
+
+        # Create a figure and a canvas
+        figure = Figure()
+        self.canvas=FigureCanvas(figure)
+        mainsplitter.addWidget(self.canvas)
+        self.ax2=figure.add_subplot()
+        self.ax=self.ax2.twinx()
+        self.redrawgraph() 
 
         # Add tabs
-        self.canvases = []
-        self.axes = []
         for i in self.categories:
+            self.graphdata[i] = {}
             self.tabs.addTab(self.create_tab(i), i)
         self.update_ui()
+
 
     def create_tab(self, name):
         """ Create a tab in the UI """
@@ -109,66 +118,202 @@ class Monographer(QMainWindow):
         text_edit = QTextEdit()
         splitter.addWidget(text_edit)
 
-        # Create a figure and a canvas
-        figure = Figure()
-        self.canvases.append(FigureCanvas(figure))
-        splitter.addWidget(self.canvases[-1])
-        self.axes.append(figure.add_subplot(111))
-        self.setup_x_axis() 
-
         # Connect the selection changed signal to a slot
-        list_view.selectionModel().selectionChanged.connect(lambda: self.update_text_edit(list_view, text_edit))
+        list_view.selectionModel().selectionChanged.connect(lambda: self.update_selected_files(name,list_view, text_edit))
         return tab
 
 
-    def setup_x_axis(self):
-        """ Set up the width of the graph """
-        # Get the current selection from the dropdown
-        interval = self.xaxis_dropdown.currentText()
-        print("Setting up X-Axis"+interval)
-        # Set up the x-axis based on the selected interval
+    def resort_data(self):
+        """ Make sure all the data is in TS order, and also adjust those time-stamps if
+            they are outside the range of the viewed month/day/week, so as to make them
+            appear overlayed on the viewed week """
         now = datetime.now()
+        keys = []
+        for i in self.graphdata.keys():
+            if(len(self.graphdata[i])>0):
+                keys = self.graphdata[i].keys() | keys
+        keys = sorted(keys)
 
-        for ax in self.axes:
+        if(len(keys)>0):
+            minimum = min(keys)
+            maximum = max(keys)
+            interval = self.xaxis_dropdown.currentText()
+            tsdiff = 1
             if interval == 'day':
-                ax.set_xlim(now.replace(hour=0, minute=0, second=0, microsecond=0), now.replace(hour=23, minute=59, second=59, microsecond=999999))
-                ax.xaxis.set_major_locator(mdates.HourLocator(interval=4))
-                ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+                s = now - timedelta(days=now.weekday())
+                minimum = s.replace(hour=0, minute=0, second=0, microsecond=0)
+                maximum = now.replace(hour=23, minute=59, second=59, microsecond=99999)
+                minimum = mdates.date2num(minimum)
+                maximum = mdates.date2num(maximum)
+                self.ax.xaxis.set_major_locator(mdates.HourLocator(interval=4))
+                self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+                tsdiff=1
             elif interval == 'week':
-                start_of_week = now - timedelta(days=now.weekday())
-                end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59, seconds=59, microseconds=999999)
-                ax.set_xlim(start_of_week, end_of_week)
-                ax.xaxis.set_major_locator(mdates.DayLocator())
-                ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %d'))
+                s = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                minimum = s.replace(hour=0, minute=0, second=0, microsecond=0)
+                maximum = s.replace(hour=23, minute=59, second=59, microsecond=999999)
+                minimum = mdates.date2num(minimum)
+                maximum = mdates.date2num(maximum)+7
+                self.ax.xaxis.set_major_locator(mdates.DayLocator())
+                self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %d'))
+                tsdiff=7
             elif interval == 'month':
-                start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                end_of_month = (start_of_month + timedelta(days=31)).replace(day=1) - timedelta(microseconds=1)
-                ax.set_xlim(start_of_month, end_of_month)
-                ax.xaxis.set_major_locator(mdates.DayLocator(interval=7))
-                ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
+                s = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                minimum = s.replace(hour=0, minute=0, second=0, microsecond=0)
+                maximum = (minimum + timedelta(days=31)).replace(day=1) - timedelta(microseconds=1)
+                minimum = mdates.date2num(minimum)
+                maximum = mdates.date2num(maximum)
+                self.ax.xaxis.set_major_locator(mdates.DayLocator(interval=7))
+                self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
+                tsdiff=28*now.day
+            else:
+                self.ax.xaxis.set_major_locator(mdates.DayLocator())
+                self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %d'))
+        else:
+            minimum = -2 
+            maximum = +2
+        self.ax.set_xlim(minimum,maximum)
+       
 
-        for c in self.canvases:
-            c.draw()
+        newdata = {}
+        for mode in self.graphdata.keys():
+            newdata[mode] = []
+            tsoffset = 0
+            ii = 0
+            thisplot = {}
+
+            if(len(keys)>0):
+                oldestts = keys[0]
+                while(oldestts+tsoffset<minimum):
+                    tsoffset+=tsdiff
+
+                while(ii<len(keys)):
+                    ts = keys[ii]
+                    tso = ts+tsoffset
+                    if(tso<=maximum):
+                        if(ts in self.graphdata[mode]):
+                            thisplot[tso]=self.graphdata[mode][ts]
+                        ii+=1;
+                    else:
+                        tsoffset-=tsdiff
+                        newdata[mode].append(thisplot)
+                if(len(thisplot.keys())>0):
+                    newdata[mode].append(thisplot)
+        return newdata
 
 
-    def update_text_edit(self, list_view, text_edit):
-        """ Set the UI textbox to contain the content of selected files """
+    def redrawgraph(self):
+        """ Redraw the whole graph """
+        self.sorteddata = self.resort_data();
+
+        for line in self.ax.lines:
+            line.remove()
+        for line in self.ax.collections:
+            line.remove()
+        for line in self.ax2.lines:
+            line.remove()
+        for line in self.ax2.collections:
+            line.remove()
+        self.ax.relim()
+        self.ax2.relim()
+        self.ax.autoscale_view(scalex=True, scaley=False)
+
+        for mode in self.categories:
+            if(mode in self.sorteddata):
+                for data in self.sorteddata[mode]:
+                    if(len(data)>0):
+                        xvals = [ts for ts in data.keys()] 
+                        for ii in range(0,len(data[xvals[0]])):
+                            yvals = [data[ts][ii] for ts in data.keys()]
+                            c = self.strtocol(mode+":"+str(ii))
+                            if(mode=="mood"):
+                                if(ii == 1):
+                                    self.ax2.fill_between(xvals,yvals, linewidth=2, color=((((c >> 16) & 0xFF)/255), 
+                                                                             (((c >>  8) & 0xFF)/255), 
+                                                                             (((c      ) & 0xFF)/255)), step='pre',zorder=1)
+                                    for ts in xvals:
+                                        print("Dat:"+str(data[ts][1]))
+                                else:
+                                    self.ax2.plot(xvals,yvals, linewidth=2, color=((((c >> 16) & 0xFF)/255), 
+                                                                             (((c >>  8) & 0xFF)/255), 
+                                                                             (((c      ) & 0xFF)/255)), zorder=2) #drawstyle="steps-pre",
+                            else:
+                                self.ax.plot(xvals,yvals, linewidth=2, color=((((c >> 16) & 0xFF)/255), 
+                                                                             (((c >>  8) & 0xFF)/255), 
+                                                                             (((c      ) & 0xFF)/255)),zorder=3)
+        self.canvas.draw()
+
+
+
+
+
+    def update_selected_files(self, mode, list_view, text_edit):
+        """ Set the UI textbox to contain the content of selected files 
+            and set the global data-vars for the graph-drawer """
         # Get the selected files
         indexes = list_view.selectionModel().selectedIndexes()
         files = [index.data(QFileSystemModel.FilePathRole) for index in indexes]
 
         # Read the contents of the files
         contents = ''
+        self.graphdata[mode] = {}
         for file in files:
             with open(file, 'r') as f:
                 contents += f.read()
+                if(mode=="steps"):
+                    contents+="\n"
+                self.append_graph_data(mode,contents)
 
         # Update the text edit
         text_edit.setLineWrapMode(QTextEdit.NoWrap)  # Disable word wrapping
         text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)  # Ensure scrollbar is always on
         text_edit.setText(contents)
+        self.redrawgraph()
+
+    def append_graph_data(self,mode,contents):
+        lines = contents.strip().split("\n")
+        for l in lines:
+            fields = l.split(",")
+            dt = self.parsedate(fields[0])
+            if(len(fields)>1):
+                if("steps"==mode):
+                    #Steps is different coz it's a row per time-block
+                    gap = 1/(len(fields)-1)
+                    for i in range(1,len(fields)-1):
+                        self.graphdata[mode][dt] = [float(fields[i])]
+                        dt+=gap
+                elif("mood"==mode):
+                    #Mood if different coz col3 is a string
+                        self.graphdata[mode][dt] = [float(fields[1]),float(fields[2])]
+                else:
+                    #Default is to just put all numbers into the chain
+                        self.graphdata[mode][dt] = []
+                        for i in range(1,len(fields)):
+                            n = 0
+                            try:
+                                n = float(fields[i])
+                            except:
+                                n = self.strtocol(fields[i])
+                            self.graphdata[mode][dt].append(n)
+                
 
 
+    def strtocol(self,thestring):
+        if(thestring in self.catcols):
+            return self.catcols[thestring]
+        col = random.randint(0, 255**3)
+        self.catcols[thestring] = col
+        return col
+
+
+    def parsedate(self,dstring):
+        if((dstring==None)or(dstring=="")):
+            return 0
+        date_format = "%Y-%m-%d %H:%M" if " " in dstring else "%Y-%m-%d"
+        dt = datetime.strptime(dstring, date_format)
+        date_num = mdates.date2num(dt)
+        return date_num
+ 
 
     def update_ui(self):
         """ Set the UI up depending on current state """
@@ -303,7 +448,7 @@ class SyncThread(QThread):
             time.sleep(1.1)
 
 
-    def diff_files(self,year=2024,mode="steps",bunchoflines=None):
+    def diff_files(self,year,mode,bunchoflines):
         """ We check if the file-lengths are the same as those we
             have on record and if not then by golly we will have
             to inform the proper authorities: IE the sync function """
