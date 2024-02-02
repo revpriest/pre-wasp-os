@@ -72,6 +72,7 @@ class MoodApp():
         self._currentact = 0
         self._topid = 0
         self._showdaydiff = 0
+        self._editingface = 0
         self._lastlogrotate = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
         self._cacheentry = self._cacheprior = _blankentry
         self._activities  = ["slack","social","work", "sleep", "exercise", "travel", "cooking", "tv", "games", "project"]
@@ -97,8 +98,6 @@ class MoodApp():
         self._showdaydiff=0;
         self._filediff    = ""
         self._load()
-        self._reset()
-        pass
 
     def wake(self):
         self._update()
@@ -114,6 +113,7 @@ class MoodApp():
     #Reset the cache-entry to be the next one in line
     def _reset(self):
         self._cacheentry   =self._clone_entry(self._cacheprior)
+        self._editingface = 0
         if(self._cacheentry!=None):
             self._cacheentry[0]=self._get_rounded_now()
         self._viewid = self._topid+1
@@ -126,15 +126,7 @@ class MoodApp():
         y = event[2]
         if(y<105):
           if(x<105):
-            if(x<32): x=32
-            if(y<34): y=34
-            if(x>96): x=96
-            if(y>96): y=96
-            awake =    (x-32)/64
-            happy = 1-((y-34)/64)
-            self._cacheentry[1] = (happy,awake)
-            self._draw_mood_face(32,34,happy,awake)
-            wasp.watch.drawable.fill(0xf000,x,y,1,1)
+            self._editingface = 1-self._editingface
           if(x>139):
             self._savebut()
             self._draw()
@@ -208,9 +200,10 @@ class MoodApp():
         if(y>100):y=100
         if(y<-100):y=-100
         y=((float(y)/100)+1)/2
-        self._cacheentry[1] = (y,x)
-        self._draw_mood_face(32,34,self._cacheentry[1][0],self._cacheentry[1][1])
-        wasp.system.keep_awake()
+        if(self._editingface==1):
+            self._cacheentry[1] = (y,x)
+            self._draw_mood_face(32,34,self._cacheentry[1][0],self._cacheentry[1][1])
+            wasp.system.keep_awake()
 
     #Nothing here really changes without user-input so we do the updates on input instead.
     def _update(self):
