@@ -17,3 +17,4 @@ wasp/appregistry.py
 activities.csv
 preferences.csv
 logs/
+monographer_settings.json

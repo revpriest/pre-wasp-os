@@ -4,6 +4,7 @@ import sys
 import types
 import random
 import string
+import json
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime, timedelta
@@ -14,23 +15,25 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QToolBar, QVB
 from PyQt5.QtCore import QDir, Qt, QThread, pyqtSignal
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.patches as patches
+from matplotlib.lines import Line2D
+
 
 
 
 class Monographer(QMainWindow):
     """ A program for getting and graphing the monolith and mood watch log data """
-    categories = ["steps","heart","mood"]
-    catcols = {
-      "mood:0":0xffff00,
-      "mood:1":0x006666,
-      "steps:0":0x00aa00,
-      "heart:0":0xaa0000,
-    }
+    categories = ["mood","steps","heart"]
+    catcols = { }
 
     def __init__(self):
         """ Build the UI """
         super().__init__()
         self.graphdata = {}
+        with open("monographer_settings.json", "r") as file:
+            settings = json.load(file)
+            if('catcols' in settings):
+                self.catcols = settings['catcols']
 
         self.setWindowTitle("Monographer")
 
@@ -59,8 +62,8 @@ class Monographer(QMainWindow):
         self.xaxis_dropdown.currentIndexChanged.connect(self.redrawgraph)
 
         # Add a test button to the toolbar
-        self.test_button = QPushButton("Test")
-        self.test_button.clicked.connect(self.sync_files)
+        self.test_button = QPushButton("Save")
+        self.test_button.clicked.connect(self.save_button)
         toolbar.addWidget(self.test_button)
 
         # Status bar
@@ -80,33 +83,48 @@ class Monographer(QMainWindow):
         # Create a figure and a canvas
         figure = Figure()
         self.canvas=FigureCanvas(figure)
+        figure.set_facecolor((0.1,0.1,0.1))
+        self.canvas.mpl_connect('pick_event', lambda x: self.on_pick(x))
         mainsplitter.addWidget(self.canvas)
         self.ax2=figure.add_subplot()
+        self.ax2.set_facecolor((.1,.1,.1))
         self.ax=self.ax2.twinx()
         self.redrawgraph() 
 
+        self.ax.tick_params(axis='x', colors='white')
+        self.ax.tick_params(axis='y', colors='white')
+        self.ax.xaxis.label.set_color('white')
+        self.ax.yaxis.label.set_color('white')
+        self.ax2.tick_params(axis='x', colors='white')
+        self.ax2.tick_params(axis='y', colors='white')
+        self.ax2.xaxis.label.set_color('white')
+        self.ax2.yaxis.label.set_color('white')
+
         # Add tabs
         for i in self.categories:
-            self.graphdata[i] = {}
-            self.tabs.addTab(self.create_tab(i), i)
+           self.graphdata[i] = {}
+           self.tabs.addTab(self.create_tab(i), i)
         self.update_ui()
+
+        mainsplitter.setSizes([100, 600])
 
 
     def create_tab(self, name):
         """ Create a tab in the UI """
         # Create a widget for the tab
         tab = QWidget()
-        layout = QVBoxLayout()
-        tab.setLayout(layout)
+        tablayout = QVBoxLayout()
+        tab.setLayout(tablayout)
 
         # Create a splitter
-        splitter = QSplitter(Qt.Horizontal)
-        layout.addWidget(splitter)
+        tabsplitter = QSplitter(Qt.Horizontal)
+        tablayout.addWidget(tabsplitter)
+        
 
         # Create a list view
         list_view = QListView()
         list_view.setSelectionMode(QListView.ExtendedSelection)  # Allow multiple selection
-        splitter.addWidget(list_view)
+        tabsplitter.addWidget(list_view)
 
         # Create a file system model
         model = QFileSystemModel()
@@ -116,12 +134,23 @@ class Monographer(QMainWindow):
 
         # Create a text edit
         text_edit = QTextEdit()
-        splitter.addWidget(text_edit)
+        tabsplitter.addWidget(text_edit)
+        tabsplitter.setSizes([1, 0])
 
         # Connect the selection changed signal to a slot
         list_view.selectionModel().selectionChanged.connect(lambda: self.update_selected_files(name,list_view, text_edit))
         return tab
 
+    def on_pick(self,event):
+        """ Clicked on the chart? """
+        print("Clicked:"+str(event.artist.get_label()))
+        l = event.artist.get_label()
+        if(l in self.catcols.keys()):
+            del(self.catcols[l])
+        else:
+            print("No color called:"+str(l))
+        self.redrawgraph()
+        
 
     def resort_data(self):
         """ Make sure all the data is in TS order, and also adjust those time-stamps if
@@ -166,12 +195,25 @@ class Monographer(QMainWindow):
                 self.ax.xaxis.set_major_locator(mdates.DayLocator(interval=7))
                 self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
                 tsdiff=28*now.day
-            else:
-                self.ax.xaxis.set_major_locator(mdates.DayLocator())
-                self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %d'))
+            else:   #free
+                diff = maximum - minimum
+                if(diff < 1.1):
+                    self.ax.xaxis.set_major_locator(mdates.HourLocator(interval=2))
+                    self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+                elif(diff < 2.2):
+                    self.ax.xaxis.set_major_locator(mdates.HourLocator(interval=4))
+                    self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+                elif(diff < 10):
+                    self.ax.xaxis.set_major_locator(mdates.DayLocator())
+                    self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %d'))
+                else:
+                    self.ax.xaxis.set_major_locator(mdates.DayLocator(interval=7))
+                    self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
         else:
             minimum = -2 
             maximum = +2
+        if((maximum-minimum)<1):
+          minimum = int(maximum-1)
         self.ax.set_xlim(minimum,maximum)
        
 
@@ -214,10 +256,13 @@ class Monographer(QMainWindow):
             line.remove()
         for line in self.ax2.collections:
             line.remove()
+        for line in self.ax2.patches:
+            line.remove()
         self.ax.relim()
         self.ax2.relim()
         self.ax.autoscale_view(scalex=True, scaley=False)
 
+        legcols = {}
         for mode in self.categories:
             if(mode in self.sorteddata):
                 for data in self.sorteddata[mode]:
@@ -225,26 +270,56 @@ class Monographer(QMainWindow):
                         xvals = [ts for ts in data.keys()] 
                         for ii in range(0,len(data[xvals[0]])):
                             yvals = [data[ts][ii] for ts in data.keys()]
-                            c = self.strtocol(mode+":"+str(ii))
+                            c = self.strtocol(mode)
+                            print("Color "+str(c)+" for mode "+mode)
                             if(mode=="mood"):
-                                if(ii == 1):
-                                    self.ax2.fill_between(xvals,yvals, linewidth=2, color=((((c >> 16) & 0xFF)/255), 
-                                                                             (((c >>  8) & 0xFF)/255), 
-                                                                             (((c      ) & 0xFF)/255)), step='pre',zorder=1)
+                                if(ii == 1):            #Awake determines block height, category determines color.
+                                    prior = [int(xvals[0]),0]
                                     for ts in xvals:
-                                        print("Dat:"+str(data[ts][1]))
-                                else:
-                                    self.ax2.plot(xvals,yvals, linewidth=2, color=((((c >> 16) & 0xFF)/255), 
+                                        s=self.cleantopic(data[ts][2]) 
+                                        c = self.strtocol(s)
+                                        legcols[s]=(1,c)
+                                        col = ((((c >> 16) & 0xFF)/255), (((c >>  8) & 0xFF)/255),  (((c      ) & 0xFF)/255))
+                                        if(prior!=None):
+                                            rect = patches.Rectangle((prior[0], -0.02), ts-prior[0], data[ts][1]+0.02, linewidth=0, 
+                                                                      edgecolor=None, facecolor=col, zorder=0)
+                                            self.ax2.add_patch(rect)
+                                        prior = [ts,data[ts][1]]
+                                elif(ii==0):
+                                    legcols[mode]=(0,c)
+                                    self.ax2.plot(xvals,yvals, linewidth=1.2, color=((((c >> 16) & 0xFF)/255), 
                                                                              (((c >>  8) & 0xFF)/255), 
                                                                              (((c      ) & 0xFF)/255)), zorder=2) #drawstyle="steps-pre",
+                                else:
+                                    pass #Don't try and draw "category", it's already the colour of the "awake"
                             else:
-                                self.ax.plot(xvals,yvals, linewidth=2, color=((((c >> 16) & 0xFF)/255), 
+                                legcols[mode]=(0,c)
+                                self.ax.plot(xvals,yvals, linewidth=1.2, color=((((c >> 16) & 0xFF)/255), 
                                                                              (((c >>  8) & 0xFF)/255), 
-                                                                             (((c      ) & 0xFF)/255)),zorder=3)
+                                                                             (((c      ) & 0xFF)/255)), label=mode+":"+str(ii), zorder=3)
+
+        legs = []
+        for i in legcols.keys():
+            c = legcols[i][1]
+            col = ((((c >> 16) & 0xFF)/255), (((c >>  8) & 0xFF)/255), (((c      ) & 0xFF)/255))
+            if(legcols[i][0]==0):
+                patch = Line2D([0],[0],color=col,label=i,picker=True)
+            else:
+                patch = patches.Patch(color=col,label=i,picker=True)
+            legs.append(patch)
+        leg = self.ax.legend(handles=legs, loc='upper left', bbox_to_anchor=(-0.15, 1.1),framealpha=1,facecolor=(0.1,0.1,0.1),labelcolor="white",ncol=8)
+        for l in leg.get_patches():
+            l.set_picker(5)
+        for l in leg.get_lines():
+            l.set_picker(5)
         self.canvas.draw()
 
 
 
+
+    def cleantopic(self,topic):
+        """ Just clean up the name stripping the punctuation and excess spaces etc. """
+        return topic.replace(".","").strip()
 
 
     def update_selected_files(self, mode, list_view, text_edit):
@@ -284,7 +359,7 @@ class Monographer(QMainWindow):
                         dt+=gap
                 elif("mood"==mode):
                     #Mood if different coz col3 is a string
-                        self.graphdata[mode][dt] = [float(fields[1]),float(fields[2])]
+                        self.graphdata[mode][dt] = [float(fields[1]),float(fields[2]),fields[3]]
                 else:
                     #Default is to just put all numbers into the chain
                         self.graphdata[mode][dt] = []
@@ -398,6 +473,13 @@ class Monographer(QMainWindow):
 
 
 
+    def save_button(self):
+        """ What does the save button do? It saves the color-chart
+            and that is automatically loaded at restart """
+        with open("monographer_settings.json", "w") as file:
+            json.dump({'catcols':self.catcols}, file)
+            print("Saved")
+
     def sync_files(self):
         """ Start the thread to pull files from the watch into our own log directory """#
         self.sync_thread = SyncThread(self)
@@ -488,9 +570,15 @@ class SyncThread(QThread):
 
 
 
-
 ### MAIN start the app ###
 app = QApplication(sys.argv)
+app.setStyleSheet("""
+    QWidget {
+        background-color: #191919;
+        color: #ffffff;
+    }
+    /* Add other widget-specific styles here */
+""")
 window = Monographer()
 window.show()
 app.exec_()
