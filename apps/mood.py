@@ -109,6 +109,7 @@ class MoodApp():
         wasp.system.request_event(wasp.EventMask.TOUCH | wasp.EventMask.SWIPE_UPDOWN| wasp.EventMask.SWIPE_LEFTRIGHT)
         self._reset()
         self._draw()
+        wasp.system.request_tick(500)
 
     #Reset the cache-entry to be the next one in line
     def _reset(self):
@@ -195,6 +196,21 @@ class MoodApp():
           wasp.watch.drawable.string("{}".format(self._showdaydiff),60, 0, width=119)
           
         self._update()
+
+
+    def tick(self, ticks):
+        (x, y, z) = watch.accel.accel_xyz()
+        x+=100
+        if(x>100):x=100
+        if(x<-100):x=-100
+        x=((float(x)/100)+1)/2
+        y-=100
+        if(y>100):y=100
+        if(y<-100):y=-100
+        y=((float(y)/100)+1)/2
+        self._cacheentry[1] = (y,x)
+        self._draw_mood_face(32,34,self._cacheentry[1][0],self._cacheentry[1][1])
+        wasp.system.keep_awake()
 
     #Nothing here really changes without user-input so we do the updates on input instead.
     def _update(self):

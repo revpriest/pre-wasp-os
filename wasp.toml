@@ -3,28 +3,23 @@
 
 [[app]]
 file = 'apps/stopwatch.py'
-quick_ring = true
 
 [[app]]
 file = 'apps/heart.py'
-quick_ring = true
 
 [[app]]
 file = 'apps/alarm.py'
-auto_load = true
 
 [[app]]
 file = 'apps/timer.py'
-auto_load = true
 
 [[app]]
 file = 'apps/calculator.py'
 
 [[app]]
 file = 'apps/mood.py'
+quick_ring = true
 
-[[app]]
-file = 'apps/disa_b_l_e.py'
 
 [[app]] # If only one watch face is included this app can be removed
 file = 'apps/faces.py'
