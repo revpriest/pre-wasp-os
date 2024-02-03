@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-# Copyright (C) 2021 Francesco Gazzetta
+# Copyright (C) 2023 Adam Priest
+                  
 """Mood application
 ~~~~~~~~~~~~~~~~~~~~
 This app allows you to set a mood and status to be logged.
@@ -9,7 +10,6 @@ This app allows you to set a mood and status to be logged.
 """
 
 # Issues:
-# * No error when editing end-time past next-item's end time? Validation in general.
 # * MEMORY - those Entry objects can be squished to mostly bytes.
 
 # You may add extra categories to the activities list
@@ -72,7 +72,8 @@ class MoodApp():
         self._currentact = 0
         self._topid = 0
         self._showdaydiff = 0
-        self._editingface = 0
+        self._editingface = None        ##Or the starting accelerator coords if editing
+        self._startedit = (0.5,0.5)
         self._lastlogrotate = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
         self._cacheentry = self._cacheprior = _blankentry
         self._activities  = ["slack","social","work", "sleep", "exercise", "travel", "cooking", "tv", "games", "project"]
@@ -113,7 +114,7 @@ class MoodApp():
     #Reset the cache-entry to be the next one in line
     def _reset(self):
         self._cacheentry   =self._clone_entry(self._cacheprior)
-        self._editingface = 0
+        self._editingface = None
         if(self._cacheentry!=None):
             self._cacheentry[0]=self._get_rounded_now()
         self._viewid = self._topid+1
@@ -126,7 +127,11 @@ class MoodApp():
         y = event[2]
         if(y<105):
           if(x<105):
-            self._editingface = 1-self._editingface
+            if(self._editingface==None):
+                self._editingface = 1
+                self._startedit = (self._cacheentry[1][0],self._cacheentry[1][1])
+            else:
+                self._editingface=None
           if(x>139):
             self._savebut()
             self._draw()
@@ -191,19 +196,32 @@ class MoodApp():
 
 
     def tick(self, ticks):
-        (x, y, z) = watch.accel.accel_xyz()
-        x+=100
-        if(x>100):x=100
-        if(x<-100):x=-100
-        x=((float(x)/100)+1)/2
-        y-=100
-        if(y>100):y=100
-        if(y<-100):y=-100
-        y=((float(y)/100)+1)/2
-        if(self._editingface==1):
-            self._cacheentry[1] = (y,x)
-            self._draw_mood_face(32,34,self._cacheentry[1][0],self._cacheentry[1][1])
-            wasp.system.keep_awake()
+        if(self._editingface!=None):
+            (x, y, z) = watch.accel.accel_xyz()
+            if(self._editingface==1):
+                #I don't really understand why just setting this straight away didn't work.
+                #but we set it here after the init signal instead because it didn't.
+                #was just giving radically different accel numbers.
+                self._editingface=(x,y,z)
+            else:
+                x=self._editingface[0]-x
+                y=self._editingface[1]-y
+                z=self._editingface[2]-z
+                if(x>300):x=300
+                if(x<-300):x=-300
+                if(y>300):y=300
+                if(y<-300):y=-300
+                x=float(x)/300
+                y=float(y)/300
+                x=self._startedit[1]-x
+                y=self._startedit[0]+y
+                if(y<0):y=0
+                if(y>1):y=1
+                if(x<0):x=0
+                if(x>1):x=1
+                self._cacheentry[1] = (y,x)
+                self._draw_mood_face(32,34,self._cacheentry[1][0],self._cacheentry[1][1])
+                wasp.system.keep_awake()
 
     #Nothing here really changes without user-input so we do the updates on input instead.
     def _update(self):
