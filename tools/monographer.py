@@ -24,6 +24,12 @@ from matplotlib.lines import Line2D
 class Monographer(QMainWindow):
     """ A program for getting and graphing the monolith and mood watch log data """
     categories = ["mood","steps","heart"]
+    theme = {
+        'bg': (0.1,0.1,0.1),
+        'bggraph': (0.16,0.15,0.16),
+        'grid': (0.90,0.90,1.00),
+        'text': (0.82,0.85,0.82),
+    }
     catcols = { }
 
     def __init__(self):
@@ -36,6 +42,16 @@ class Monographer(QMainWindow):
                 self.catcols = settings['catcols']
 
         self.setWindowTitle("Monographer")
+
+
+        # Format the stylesheet with the theme colors
+        stylesheet = f"""
+            QWidget {{
+                background-color: {self.rgb_to_hex(self.theme['bg'])};
+                color: {self.rgb_to_hex(self.theme['text'])};
+            }}
+        """
+        self.setStyleSheet(stylesheet)
 
         # Main toolbar
         toolbar = QToolBar()
@@ -83,22 +99,24 @@ class Monographer(QMainWindow):
         # Create a figure and a canvas
         figure = Figure()
         self.canvas=FigureCanvas(figure)
-        figure.set_facecolor((0.1,0.1,0.1))
+        figure.set_facecolor(self.theme['bg'])
         self.canvas.mpl_connect('pick_event', lambda x: self.on_pick(x))
         mainsplitter.addWidget(self.canvas)
         self.ax2=figure.add_subplot()
-        self.ax2.set_facecolor((.1,.1,.1))
+        self.ax2.set_facecolor(self.theme['bggraph'])
         self.ax=self.ax2.twinx()
         self.redrawgraph() 
+        self.ax2.grid(True, color=self.theme['grid'], linestyle='-', linewidth=0.5, alpha=0.05)
+        figure.subplots_adjust(left=0.06, right=0.94, bottom=0.06, top=0.85)
 
-        self.ax.tick_params(axis='x', colors='white')
-        self.ax.tick_params(axis='y', colors='white')
-        self.ax.xaxis.label.set_color('white')
-        self.ax.yaxis.label.set_color('white')
-        self.ax2.tick_params(axis='x', colors='white')
-        self.ax2.tick_params(axis='y', colors='white')
-        self.ax2.xaxis.label.set_color('white')
-        self.ax2.yaxis.label.set_color('white')
+        self.ax.tick_params(axis='x', colors=self.theme['text'])
+        self.ax.tick_params(axis='y', colors=self.theme['text'])
+        self.ax.xaxis.label.set_color(self.theme['text'])
+        self.ax.yaxis.label.set_color(self.theme['text'])
+        self.ax2.tick_params(axis='x', colors=self.theme['text'])
+        self.ax2.tick_params(axis='y', colors=self.theme['text'])
+        self.ax2.xaxis.label.set_color(self.theme['text'])
+        self.ax2.yaxis.label.set_color(self.theme['text'])
 
         # Add tabs
         for i in self.categories:
@@ -108,6 +126,11 @@ class Monographer(QMainWindow):
 
         mainsplitter.setSizes([100, 600])
 
+
+
+    def rgb_to_hex(self,rgb):
+        """ RGB to Hex """
+        return '#{:02x}{:02x}{:02x}'.format(int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
 
     def create_tab(self, name):
         """ Create a tab in the UI """
@@ -143,7 +166,6 @@ class Monographer(QMainWindow):
 
     def on_pick(self,event):
         """ Clicked on the chart? """
-        print("Clicked:"+str(event.artist.get_label()))
         l = event.artist.get_label()
         if(l in self.catcols.keys()):
             del(self.catcols[l])
@@ -271,7 +293,6 @@ class Monographer(QMainWindow):
                         for ii in range(0,len(data[xvals[0]])):
                             yvals = [data[ts][ii] for ts in data.keys()]
                             c = self.strtocol(mode)
-                            print("Color "+str(c)+" for mode "+mode)
                             if(mode=="mood"):
                                 if(ii == 1):            #Awake determines block height, category determines color.
                                     prior = [int(xvals[0]),0]
@@ -307,7 +328,7 @@ class Monographer(QMainWindow):
             else:
                 patch = patches.Patch(color=col,label=i,picker=True)
             legs.append(patch)
-        leg = self.ax.legend(handles=legs, loc='upper left', bbox_to_anchor=(-0.15, 1.1),framealpha=1,facecolor=(0.1,0.1,0.1),labelcolor="white",ncol=8)
+        leg = self.ax.legend(handles=legs, loc='upper left', bbox_to_anchor=(0.0, 1.2),framealpha=1,facecolor=(0.15,0.15,0.15),labelcolor="white",ncol=7)
         for l in leg.get_patches():
             l.set_picker(5)
         for l in leg.get_lines():
@@ -572,13 +593,6 @@ class SyncThread(QThread):
 
 ### MAIN start the app ###
 app = QApplication(sys.argv)
-app.setStyleSheet("""
-    QWidget {
-        background-color: #191919;
-        color: #ffffff;
-    }
-    /* Add other widget-specific styles here */
-""")
 window = Monographer()
 window.show()
 app.exec_()
