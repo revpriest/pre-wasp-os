@@ -630,8 +630,9 @@ class MonolithApp():
           if(bar>100):
             bar=100
             col = wasp.watch.drawable.lighten(col, 16)
+          else:
+            wasp.watch.drawable.fill(col2,bar+1, 238, 99-bar,2)
           wasp.watch.drawable.fill(col ,  0,   238,    bar,2)
-          wasp.watch.drawable.fill(col2,bar+1, 238, 99-bar,2)
 
 
     #A string representation of the day
