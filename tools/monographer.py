@@ -11,18 +11,20 @@ from datetime import datetime, timedelta
 import io
 import time
 import pexpect
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QToolBar, QVBoxLayout, QWidget, QListView, QFileSystemModel, QTextEdit, QSplitter, QComboBox, QPushButton
-from PyQt5.QtCore import QDir, Qt, QThread, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QToolBar, QVBoxLayout, QWidget, QListView, QFileSystemModel, QTextEdit, QSplitter, QComboBox, QPushButton, QDialog, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QLineEdit
+from PyQt5.QtCore import QDir, Qt, QThread, pyqtSignal, QRectF
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.patches as patches
 from matplotlib.lines import Line2D
 
 
+# TODO:
+# 1) Save should edit log as well as metadata
+# 2)
 
 
 class Monographer(QMainWindow):
-    """ A program for getting and graphing the monolith and mood watch log data """
     categories = ["mood","steps","heart"]
     theme = {
         'bg': (0.1,0.1,0.1),
@@ -31,6 +33,8 @@ class Monographer(QMainWindow):
         'text': (0.82,0.85,0.82),
     }
     catcols = { }
+    fsmodels = {}
+    lviews = {}
 
     def __init__(self):
         """ Build the UI """
@@ -42,6 +46,7 @@ class Monographer(QMainWindow):
                 self.catcols = settings['catcols']
 
         self.setWindowTitle("Monographer")
+        self.dialog = EditMetaDialog()
 
 
         # Format the stylesheet with the theme colors
@@ -59,8 +64,12 @@ class Monographer(QMainWindow):
 
         # Year selection
         self.year_dropdown = QComboBox()
-        self.year_dropdown.addItems([str(year) for year in range(2024, 1980, -1)])
+        log_dirs = [d for d in os.listdir('./logs/') if os.path.isdir(os.path.join('./logs/', d))]
+        sorted_log_dirs = sorted(log_dirs, reverse=True)
+        self.year_dropdown.addItems(sorted_log_dirs)
         toolbar.addWidget(self.year_dropdown)
+        self.year_dropdown.currentIndexChanged.connect(self.on_year_changed)
+
 
         # Connect/Disconnect button
         self.connect_button = QPushButton("Connect")
@@ -99,8 +108,9 @@ class Monographer(QMainWindow):
         # Create a figure and a canvas
         figure = Figure()
         self.canvas=FigureCanvas(figure)
-        figure.set_facecolor(self.theme['bg'])
         self.canvas.mpl_connect('pick_event', lambda x: self.on_pick(x))
+        figure.set_facecolor(self.theme['bg'])
+        figure.set_picker(5)
         mainsplitter.addWidget(self.canvas)
         self.ax2=figure.add_subplot()
         self.ax2.set_facecolor(self.theme['bggraph'])
@@ -145,15 +155,20 @@ class Monographer(QMainWindow):
         
 
         # Create a list view
-        list_view = QListView()
-        list_view.setSelectionMode(QListView.ExtendedSelection)  # Allow multiple selection
-        tabsplitter.addWidget(list_view)
+        self.lviews[name] = QListView()
+        self.lviews[name].setSelectionMode(QListView.ExtendedSelection)  # Allow multiple selection
+        tabsplitter.addWidget(self.lviews[name])
 
         # Create a file system model
-        model = QFileSystemModel()
-        model.setRootPath(QDir.currentPath())
-        list_view.setModel(model)
-        list_view.setRootIndex(model.index(f'./logs/2024/{name}/'))
+        self.fsmodels[name] = QFileSystemModel()
+        self.fsmodels[name].setRootPath(QDir.currentPath())
+        self.lviews[name].setModel(self.fsmodels[name])
+        self.fsmodels[name].setNameFilters(["*.csv"])
+        self.fsmodels[name].setNameFilterDisables(False)
+
+        year = self.year_dropdown.currentText()
+        s = "./logs/{}/{}".format(year,name)
+        self.lviews[name].setRootIndex(self.fsmodels[name].index(s))
 
         # Create a text edit
         text_edit = QTextEdit()
@@ -161,7 +176,7 @@ class Monographer(QMainWindow):
         tabsplitter.setSizes([1, 0])
 
         # Connect the selection changed signal to a slot
-        list_view.selectionModel().selectionChanged.connect(lambda: self.update_selected_files(name,list_view, text_edit))
+        self.lviews[name].selectionModel().selectionChanged.connect(lambda: self.update_selected_files(name,self.lviews[name], text_edit))
         return tab
 
     def on_pick(self,event):
@@ -170,8 +185,38 @@ class Monographer(QMainWindow):
         if(l in self.catcols.keys()):
             del(self.catcols[l])
         else:
-            print("No color called:"+str(l))
+            if(event.mouseevent.xdata!=None):
+                for ts in self.graphdata['mood']:
+                    if(ts>event.mouseevent.xdata):
+                        try:
+                            fname = self.graphdata["mood"][ts][3]+".meta"
+                            with open(fname, "r") as file:
+                                metadata = json.load(file)
+                                for m in metadata:
+                                    ets = m['ts']
+                                    matlibts = mdates.date2num(datetime.fromtimestamp(ets))
+                                    if(abs(matlibts - ts)<0.0005):
+                                        self.dialog.setup(ets, self.graphdata['mood'][ts],m,self.redrawgraph)
+                                        self.dialog.show()
+                                        return
+                        except Exception as e:
+                            print("Excep:"+str(e))
+                            pass
+                        
+                        ets = int(mdates.num2date(ts).timestamp())
+                        self.dialog.setup(ets, self.graphdata['mood'][ts],{'text':"",'ts':ts},self.redrawgraph)
+                        self.dialog.show()
+                        break
+                
         self.redrawgraph()
+
+    def on_year_changed(self):
+        """ when the year drop-down changes """
+        for mode in self.categories:
+            year = self.year_dropdown.currentText()
+            s = "./logs/{}/{}".format(year,mode)
+            self.lviews[mode].setRootIndex(self.fsmodels[mode].index(s))
+            
         
 
     def resort_data(self):
@@ -302,31 +347,30 @@ class Monographer(QMainWindow):
                                         legcols[s]=(1,c)
                                         col = ((((c >> 16) & 0xFF)/255), (((c >>  8) & 0xFF)/255),  (((c      ) & 0xFF)/255))
                                         if(prior!=None):
-                                            rect = patches.Rectangle((prior[0], -0.02), ts-prior[0], data[ts][1]+0.02, linewidth=0, 
-                                                                      edgecolor=None, facecolor=col, zorder=0)
+                                            rect = patches.Rectangle((prior[0], -0.02), ts-prior[0], data[ts][1]+0.02, linewidth=0, edgecolor=None, facecolor=col, zorder=2)
                                             self.ax2.add_patch(rect)
                                         prior = [ts,data[ts][1]]
                                 elif(ii==0):
                                     legcols[mode]=(0,c)
                                     self.ax2.plot(xvals,yvals, linewidth=1.2, color=((((c >> 16) & 0xFF)/255), 
                                                                              (((c >>  8) & 0xFF)/255), 
-                                                                             (((c      ) & 0xFF)/255)), zorder=2) #drawstyle="steps-pre",
+                                                                             (((c      ) & 0xFF)/255)), zorder=3) #drawstyle="steps-pre",
                                 else:
                                     pass #Don't try and draw "category", it's already the colour of the "awake"
                             else:
                                 legcols[mode]=(0,c)
                                 self.ax.plot(xvals,yvals, linewidth=1.2, color=((((c >> 16) & 0xFF)/255), 
                                                                              (((c >>  8) & 0xFF)/255), 
-                                                                             (((c      ) & 0xFF)/255)), label=mode+":"+str(ii), zorder=3)
+                                                                             (((c      ) & 0xFF)/255)), label=mode+":"+str(ii), zorder=4)
 
         legs = []
         for i in legcols.keys():
             c = legcols[i][1]
             col = ((((c >> 16) & 0xFF)/255), (((c >>  8) & 0xFF)/255), (((c      ) & 0xFF)/255))
             if(legcols[i][0]==0):
-                patch = Line2D([0],[0],color=col,label=i,picker=True)
+                patch = Line2D([0],[0],color=col,label=i)
             else:
-                patch = patches.Patch(color=col,label=i,picker=True)
+                patch = patches.Patch(color=col,label=i)
             legs.append(patch)
         leg = self.ax.legend(handles=legs, loc='upper left', bbox_to_anchor=(0.0, 1.2),framealpha=1,facecolor=(0.15,0.15,0.15),labelcolor="white",ncol=7)
         for l in leg.get_patches():
@@ -358,7 +402,7 @@ class Monographer(QMainWindow):
                 contents += f.read()
                 if(mode=="steps"):
                     contents+="\n"
-                self.append_graph_data(mode,contents)
+                self.append_graph_data(mode,contents,file)
 
         # Update the text edit
         text_edit.setLineWrapMode(QTextEdit.NoWrap)  # Disable word wrapping
@@ -366,7 +410,7 @@ class Monographer(QMainWindow):
         text_edit.setText(contents)
         self.redrawgraph()
 
-    def append_graph_data(self,mode,contents):
+    def append_graph_data(self,mode,contents,filename):
         lines = contents.strip().split("\n")
         for l in lines:
             fields = l.split(",")
@@ -380,7 +424,7 @@ class Monographer(QMainWindow):
                         dt+=gap
                 elif("mood"==mode):
                     #Mood if different coz col3 is a string
-                        self.graphdata[mode][dt] = [float(fields[1]),float(fields[2]),fields[3]]
+                        self.graphdata[mode][dt] = [float(fields[1]),float(fields[2]),fields[3],filename]
                 else:
                     #Default is to just put all numbers into the chain
                         self.graphdata[mode][dt] = []
@@ -570,7 +614,7 @@ class SyncThread(QThread):
             fields = l.strip().split()
             if(len(fields)>1):
                 if((not fields[1] in existing.keys())or(existing[fields[1]]!=int(fields[0]))):
-                    print("Different, syncing: "+fields[1])
+                    print("Different, syncing: "+str(fields[0])+":"+str(existing[fields[1]])+":"+fields[1])
                     self.sync_file(year,mode,fields[1])
                 else:
                     #print("Already got a good looking "+fields[1])
@@ -582,13 +626,97 @@ class SyncThread(QThread):
     def sync_file(self,year,mode,fname):
         cmd = "cat(\""+("/flash/logs/{:04d}/{}/{}".format(year,mode,fname))+"\")"
         bunchoflines = self.main.remote_execute(cmd)
-        bunchoflines = bunchoflines.replace('\r', '').strip()+"\n"
+        bunchoflines = bunchoflines.replace('\r', '').strip()
+        if(mode!="steps"):
+            bunchoflines+="\n"
         time.sleep(1)
         self.main.remote_execute("collect()")
         with open("./logs/{:04d}/{}/{}".format(year,mode,fname), 'w') as f:
             f.write(bunchoflines)
         time.sleep(0.5)
 
+
+
+### EDIT AN EVENT METADATA DIALOG ##
+
+class EditMetaDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.layout = QVBoxLayout(self)
+
+        # Create a QGraphicsView with a circle in the top left corner
+        self.scene = QGraphicsScene(self)
+        self.view = QGraphicsView(self.scene, self)
+        self.scene.addItem(QGraphicsEllipseItem(QRectF(0, 0, 128, 128)))
+        self.layout.addWidget(self.view)
+
+        # Create two QLineEdit boxes for editing single numbers
+        self.happy = QLineEdit(self)
+        self.awake = QLineEdit(self)
+        self.category = QLineEdit(self)
+        self.layout.addWidget(self.happy)
+        self.layout.addWidget(self.awake)
+        self.layout.addWidget(self.category)
+
+        # Create a QTextEdit box for multiline text input
+        self.textEdit = QTextEdit(self)
+        self.layout.addWidget(self.textEdit)
+
+        # Create Save and Cancel buttons
+        self.saveButton = QPushButton('Save', self)
+        self.layout.addWidget(self.saveButton)
+        self.saveButton.clicked.connect(self.save)
+
+        self.cancelButton = QPushButton('Cancel', self)
+        self.layout.addWidget(self.cancelButton)
+        self.cancelButton.clicked.connect(self.cancel)
+
+
+    def save(self):
+        self.event[0] = float(self.happy.text())
+        self.event[1] = float(self.awake.text())
+        self.event[2] = self.category.text()
+        self.meta['text'] = self.textEdit.toPlainText()
+        print("Wanna save the meta and maybe edit the event log for "+str(self.ts)+"=>"+str(self.event)+":"+str(self.meta))
+
+        fname = self.event[3]+".meta"
+        metadata = []
+        try:
+            with open(fname, "r") as file:
+                metadata = json.load(file)
+            print("Loaded existing metadta "+str(metadata))
+        except:
+           print("no existing file?") 
+        found=False
+        for i in range(0,len(metadata)):
+            met = metadata[i]
+            if(self.ts == met['ts']):
+                found=True
+                metadata[i] = self.meta
+        if(not found):
+            metadata.append(self.meta)
+        with open(fname, "w") as file:
+            json.dump(metadata, file)
+            print("Saved")
+        self.callback() 
+        self.hide()
+
+    def cancel(self):
+        self.hide()
+
+
+
+    def setup(self, ts, event, meta,callback):
+        self.ts    = ts   
+        self.event = event
+        self.meta = meta
+        self.callback = callback
+        self.meta['ts'] = ts
+        self.happy.setText(str(event[0]))
+        self.awake.setText(str(event[1]))
+        self.category.setText(str(event[2].strip()))
+        self.textEdit.setText(str(meta['text']))
 
 
 ### MAIN start the app ###
