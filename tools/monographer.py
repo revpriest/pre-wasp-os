@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import io
 import time
 import pexpect
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QToolBar, QVBoxLayout, QWidget, QListView, QFileSystemModel, QTextEdit, QSplitter, QComboBox, QPushButton, QDialog, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QLineEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QToolBar, QVBoxLayout, QWidget, QListView, QFileSystemModel, QTextEdit, QSplitter, QComboBox, QPushButton, QDialog, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QLineEdit, QLabel
 from PyQt5.QtCore import QDir, Qt, QThread, pyqtSignal, QRectF
 from PyQt5.QtGui import QBrush, QPainterPath, QPen
 from matplotlib.figure import Figure
@@ -41,13 +41,16 @@ class Monographer(QMainWindow):
         """ Build the UI """
         super().__init__()
         self.graphdata = {}
-        with open("monographer_settings.json", "r") as file:
-            settings = json.load(file)
-            if('catcols' in settings):
-                self.catcols = settings['catcols']
-
+        try:
+            with open("monographer_settings.json", "r") as file:
+                settings = json.load(file)
+                if('catcols' in settings):
+                    self.catcols = settings['catcols']
+        except:
+            pass
         self.setWindowTitle("Monographer")
         self.dialog = EditMetaDialog(self)
+        self.actdialog = EditActivitiesDialog(self)
 
 
         # Format the stylesheet with the theme colors
@@ -87,10 +90,15 @@ class Monographer(QMainWindow):
         toolbar.addWidget(self.xaxis_dropdown)
         self.xaxis_dropdown.currentIndexChanged.connect(self.redrawgraph)
 
-        # Add a test button to the toolbar
-        self.test_button = QPushButton("Save")
-        self.test_button.clicked.connect(self.save_button)
-        toolbar.addWidget(self.test_button)
+        # Add a save button to the toolbar
+        self.save_but = QPushButton("Save")
+        self.save_but.clicked.connect(self.save_button)
+        toolbar.addWidget(self.save_but)
+
+        # Add a activites button to the toolbar
+        self.act_but = QPushButton("Acitivites")
+        self.act_but.clicked.connect(self.activities_button)
+        toolbar.addWidget(self.act_but)
 
         # Status bar
         self.status_bar = self.statusBar()
@@ -527,17 +535,58 @@ class Monographer(QMainWindow):
 
 
 
-    def remote_execute(self,cmd):
+    def remote_execute(self,cmd,expect=None):
         """ Execute a command on the watch """
         if((not hasattr(self,"console")) or (self.console==None)):
             return "Not Connected"
+        if(expect==None):
+            expect = cmd
         self.console.sendline(cmd)
-        self.console.expect_exact(cmd)
+        self.console.expect_exact(expect)
         self.console.expect([pexpect.EOF,'>>> '])
         result = self.console.before.replace("\n\n\n","\n").strip("\n")
         return result
 
 
+    def activities_button(self):
+        """ Popup the activities to edit if we are connected to watch """
+        if(hasattr(self,"console")):
+            self.actdialog.setup("Loading...")
+            self.actdialog.show()
+            res = self.remote_execute("cat('/flash/activities.csv')")
+            res = "\n".join(res.strip().split("\n")[0].split(","))
+            self.actdialog.setup(res)
+        else:
+            self.status_bar.showMessage(f"Not Connected!")
+       
+    def save_activities(self,newsetstr):
+        newsetstr = ",".join(newsetstr.strip().split("\n")).strip()
+        print("Saving:"+newsetstr)
+        res = self.remote_execute("collect()").strip()
+
+        time.sleep(0.5)
+        cmd = "f=open(\"/flash/activities.csv\", \"w\")"
+        res = self.remote_execute(cmd)
+
+        time.sleep(0.5)
+        cmd = "f.write(\""+newsetstr+"\")"
+        res = self.remote_execute(cmd)
+
+        time.sleep(0.5)
+        cmd = "f.close()"
+        res = self.remote_execute(cmd)
+
+        time.sleep(0.5)
+        cmd = "del(f)"
+        res = self.remote_execute(cmd)
+
+        if(res=="Saved"):
+            self.status_bar.showMessage("Saved Great")
+        else:
+            self.status_bar.showMessage("Failed Save:"+res)
+            
+        
+        
 
     def save_button(self):
         """ What does the save button do? It saves the color-chart
@@ -637,6 +686,38 @@ class SyncThread(QThread):
         time.sleep(0.5)
 
 
+### EDIT THE EXTRA CATEGORIES DIALOG ##
+class EditActivitiesDialog(QDialog):
+    def __init__(self,parent=None):
+        super().__init__(parent)
+        self.layout = QVBoxLayout(self)
+        self.parent = parent
+
+        desc = QLabel(self)
+        desc.setText("One per line, don't be fancy or many, you may crash the watch")
+        self.layout.addWidget(desc)
+
+        self.textEdit = QTextEdit(self)
+        self.layout.addWidget(self.textEdit)
+
+        self.saveButton = QPushButton('Save To Watch', self)
+        self.layout.addWidget(self.saveButton)
+        self.saveButton.clicked.connect(self.save)
+
+        self.cancelButton = QPushButton('Cancel', self)
+        self.layout.addWidget(self.cancelButton)
+        self.cancelButton.clicked.connect(self.cancel)
+
+    def setup(self, text):
+        self.textEdit.setText(str(text))
+
+    def cancel(self):
+        self.hide()
+
+    def save(self):
+        self.parent.save_activities(self.textEdit.toPlainText())
+        self.hide()
+
 
 ### EDIT AN EVENT METADATA DIALOG ##
 
@@ -677,6 +758,16 @@ class EditMetaDialog(QDialog):
         self.layout.addWidget(self.cancelButton)
         self.cancelButton.clicked.connect(self.cancel)
 
+    def setup(self, ts, event, meta,callback):
+        self.ts    = ts   
+        self.event = event
+        self.meta = meta
+        self.callback = callback
+        self.meta['ts'] = ts
+        self.happy.setText(str(event[0]))
+        self.awake.setText(str(event[1]))
+        self.category.setText(str(event[2].strip()))
+        self.textEdit.setText(str(meta['text']))
 
 
     def redraw(self):
@@ -716,7 +807,7 @@ class EditMetaDialog(QDialog):
         if(happy_value<0):happy_value=0
         pen = QPen(Qt.black, 5)
         h = 88
-        mid_point = h + (happy_value - 0.5) * 64
+        mid_point = h + (happy_value - 0.5) * 80
         path = QPainterPath()
         path.moveTo(24, h)
         path.quadTo(64, mid_point, 104, h)
@@ -804,16 +895,6 @@ class EditMetaDialog(QDialog):
         except Exception as e:
            print("Can't write:"+str(e)) 
 
-    def setup(self, ts, event, meta,callback):
-        self.ts    = ts   
-        self.event = event
-        self.meta = meta
-        self.callback = callback
-        self.meta['ts'] = ts
-        self.happy.setText(str(event[0]))
-        self.awake.setText(str(event[1]))
-        self.category.setText(str(event[2].strip()))
-        self.textEdit.setText(str(meta['text']))
 
 
 ### MAIN start the app ###
