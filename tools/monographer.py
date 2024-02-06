@@ -46,7 +46,7 @@ class Monographer(QMainWindow):
                 self.catcols = settings['catcols']
 
         self.setWindowTitle("Monographer")
-        self.dialog = EditMetaDialog()
+        self.dialog = EditMetaDialog(self)
 
 
         # Format the stylesheet with the theme colors
@@ -614,7 +614,7 @@ class SyncThread(QThread):
             fields = l.strip().split()
             if(len(fields)>1):
                 if((not fields[1] in existing.keys())or(existing[fields[1]]!=int(fields[0]))):
-                    print("Different, syncing: "+str(fields[0])+":"+str(existing[fields[1]])+":"+fields[1])
+                    print("Different, syncing: "+str(fields[0])+":"+str(fields[1]))
                     self.sync_file(year,mode,fields[1])
                 else:
                     #print("Already got a good looking "+fields[1])
@@ -640,8 +640,8 @@ class SyncThread(QThread):
 ### EDIT AN EVENT METADATA DIALOG ##
 
 class EditMetaDialog(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self,parent=None):
+        super().__init__(parent)
 
         self.layout = QVBoxLayout(self)
 
@@ -673,21 +673,50 @@ class EditMetaDialog(QDialog):
         self.cancelButton.clicked.connect(self.cancel)
 
 
-    def save(self):
-        self.event[0] = float(self.happy.text())
-        self.event[1] = float(self.awake.text())
-        self.event[2] = self.category.text()
-        self.meta['text'] = self.textEdit.toPlainText()
-        print("Wanna save the meta and maybe edit the event log for "+str(self.ts)+"=>"+str(self.event)+":"+str(self.meta))
 
+    def cancel(self):
+        self.hide()
+
+    def save(self):
+        changed=False
+        changedMeta=False
+        if(self.event[0] != float(self.happy.text())):
+            self.event[0] = float(self.happy.text())
+            changed=True
+        if(self.event[1] != float(self.awake.text())):
+            self.event[1] = float(self.awake.text())
+            changed=True
+        if(self.event[2] != self.category.text()):
+            self.event[2] = self.category.text()
+            changed=True
+        testtext = self.textEdit.toPlainText()
+        if(self.meta['text'] != testtext):
+            self.meta['text'] = testtext
+            changedMeta=True
+        if(changedMeta):
+            self.saveMetadata()
+        if(changed):
+            self.updateSavedLog()
+        self.callback() 
+        self.hide()
+
+    def fix_str_size(self,s):
+        if(s[-1]=="."):
+          s = s[0:-1]
+        while(len(s)<35):
+          s+=" "
+        s = s[0:35]
+        return s+"."
+
+    def saveMetadata(self):
         fname = self.event[3]+".meta"
         metadata = []
         try:
             with open(fname, "r") as file:
                 metadata = json.load(file)
-            print("Loaded existing metadta "+str(metadata))
         except:
-           print("no existing file?") 
+            pass
+            #print("no existing file?") 
         found=False
         for i in range(0,len(metadata)):
             met = metadata[i]
@@ -698,14 +727,30 @@ class EditMetaDialog(QDialog):
             metadata.append(self.meta)
         with open(fname, "w") as file:
             json.dump(metadata, file)
-            print("Saved")
-        self.callback() 
-        self.hide()
 
-    def cancel(self):
-        self.hide()
-
-
+    def updateSavedLog(self):
+        fname = self.event[3]
+        contents = ""
+        try:
+            with open(fname, 'r') as f:
+                contents += f.read()
+            lines = contents.split("\n")
+            for i in range(0,len(lines)):
+                fields = lines[i].split(",")
+                if(len(fields)>1):
+                    test_ts = int(datetime.strptime(fields[0], "%Y-%m-%d %H:%M").timestamp())
+                    if(test_ts==self.ts):
+                        fields[1] = "{:0.2f}".format(self.event[0])
+                        fields[2] = "{:0.2f}".format(self.event[1])
+                        fields[3] = self.fix_str_size(self.event[2])
+                        lines[i] = ",".join(fields)
+                    else:
+                        lines[i] = ",".join(fields)
+            newcontents = "\n".join(lines)
+            with open(fname, 'w') as f:
+                f.write(newcontents)
+        except Exception as e:
+           print("Can't write:"+str(e)) 
 
     def setup(self, ts, event, meta,callback):
         self.ts    = ts   
