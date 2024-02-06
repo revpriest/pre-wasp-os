@@ -84,7 +84,7 @@ class MoodApp():
           with open("/flash/activities.csv", 'r') as f:
             l = f.readline()
             for i in l.split(","):
-              self._activities.append(i)
+              self._activities.append(i.strip())
         except Exception as e:
             print("ActLoadExcep:" +str(e))
         gc.collect()
