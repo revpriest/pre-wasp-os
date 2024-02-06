@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import io
 import time
 import pexpect
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QToolBar, QVBoxLayout, QWidget, QListView, QFileSystemModel, QTextEdit, QSplitter, QComboBox, QPushButton, QDialog, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QLineEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QToolBar, QVBoxLayout, QWidget, QListView, QFileSystemModel, QTextEdit, QSplitter, QComboBox, QPushButton, QDialog, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QLineEdit, QLabel
 from PyQt5.QtCore import QDir, Qt, QThread, pyqtSignal, QRectF
 from PyQt5.QtGui import QBrush, QPainterPath, QPen
 from matplotlib.figure import Figure
@@ -566,22 +566,18 @@ class Monographer(QMainWindow):
 
         time.sleep(0.5)
         cmd = "f=open(\"/flash/activities.csv\", \"w\")"
-        print("Doing:"+cmd)
         res = self.remote_execute(cmd)
 
         time.sleep(0.5)
         cmd = "f.write(\""+newsetstr+"\")"
-        print("Doing:"+cmd)
         res = self.remote_execute(cmd)
 
         time.sleep(0.5)
         cmd = "f.close()"
-        print("Doing:"+cmd)
         res = self.remote_execute(cmd)
 
         time.sleep(0.5)
         cmd = "del(f)"
-        print("Doing:"+cmd)
         res = self.remote_execute(cmd)
 
         if(res=="Saved"):
@@ -697,11 +693,13 @@ class EditActivitiesDialog(QDialog):
         self.layout = QVBoxLayout(self)
         self.parent = parent
 
-        # Create a QTextEdit box for multiline text input
+        desc = QLabel(self)
+        desc.setText("One per line, don't be fancy or many, you may crash the watch")
+        self.layout.addWidget(desc)
+
         self.textEdit = QTextEdit(self)
         self.layout.addWidget(self.textEdit)
 
-        # Create Save and Cancel buttons
         self.saveButton = QPushButton('Save To Watch', self)
         self.layout.addWidget(self.saveButton)
         self.saveButton.clicked.connect(self.save)
