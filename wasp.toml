@@ -2,6 +2,10 @@
 # At least one watch face must be specified. Quick ring apps will be added in order.
 
 [[app]]
+file = 'apps/mood.py'
+quick_ring = true
+
+[[app]]
 file = 'apps/space_font.py'
 auto_load = true
 
@@ -17,12 +21,8 @@ file = 'apps/digi_font.py'
 [[app]]
 file = 'apps/snake.py'
 
-[[app]]
-file = 'apps/heart.py'
-
-[[app]]
-file = 'apps/mood.py'
-quick_ring = true
+#[[app]]
+#file = 'apps/heart.py'
 
 #[[app]]
 #file = 'apps/calculator.py'
