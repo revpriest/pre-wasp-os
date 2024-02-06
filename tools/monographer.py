@@ -13,6 +13,7 @@ import time
 import pexpect
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QToolBar, QVBoxLayout, QWidget, QListView, QFileSystemModel, QTextEdit, QSplitter, QComboBox, QPushButton, QDialog, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QLineEdit
 from PyQt5.QtCore import QDir, Qt, QThread, pyqtSignal, QRectF
+from PyQt5.QtGui import QBrush, QPainterPath, QPen
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.patches as patches
@@ -648,16 +649,20 @@ class EditMetaDialog(QDialog):
         # Create a QGraphicsView with a circle in the top left corner
         self.scene = QGraphicsScene(self)
         self.view = QGraphicsView(self.scene, self)
-        self.scene.addItem(QGraphicsEllipseItem(QRectF(0, 0, 128, 128)))
+        self.redraw()
         self.layout.addWidget(self.view)
 
-        # Create two QLineEdit boxes for editing single numbers
+        # Create some, QLineEdit boxes for editing values
         self.happy = QLineEdit(self)
         self.awake = QLineEdit(self)
         self.category = QLineEdit(self)
         self.layout.addWidget(self.happy)
         self.layout.addWidget(self.awake)
         self.layout.addWidget(self.category)
+
+        # Connect the textChanged signal to the redraw method
+        self.happy.textChanged.connect(self.redraw)
+        self.awake.textChanged.connect(self.redraw)
 
         # Create a QTextEdit box for multiline text input
         self.textEdit = QTextEdit(self)
@@ -672,6 +677,53 @@ class EditMetaDialog(QDialog):
         self.layout.addWidget(self.cancelButton)
         self.cancelButton.clicked.connect(self.cancel)
 
+
+
+    def redraw(self):
+        # Clear the scene
+        self.scene.clear()
+
+        # Redraw the yellow ellipse
+        ellipse = QGraphicsEllipseItem(QRectF(0, 0, 128, 128))
+        ellipse.setBrush(QBrush(Qt.yellow))
+        self.scene.addItem(ellipse)
+
+        # Draw the black ellipses for eyes
+        awake_value = 0.5
+        try:
+            awake_value = float(self.awake.text())
+        except:
+            pass
+        if(awake_value>1):awake_value=1
+        if(awake_value<0):awake_value=0
+        offset = awake_value * 16
+        ellipse1 = QGraphicsEllipseItem(QRectF(24, 48-offset, 32, awake_value * 32))
+        ellipse1.setBrush(QBrush(Qt.black))
+        self.scene.addItem(ellipse1)
+
+        ellipse2 = QGraphicsEllipseItem(QRectF(72, 48-offset, 32, awake_value * 32))
+        ellipse2.setBrush(QBrush(Qt.black))
+        self.scene.addItem(ellipse2)
+
+        # Draw the curve for mouth
+        happy_value = 0.5
+        try:
+            happy_value = float(self.happy.text())
+        except:
+            pass
+
+        if(happy_value>1):happy_value=1
+        if(happy_value<0):happy_value=0
+        pen = QPen(Qt.black, 5)
+        h = 88
+        mid_point = h + (happy_value - 0.5) * 64
+        path = QPainterPath()
+        path.moveTo(24, h)
+        path.quadTo(64, mid_point, 104, h)
+        self.scene.addPath(path,pen)
+
+        # Update the view
+        self.view.update()
 
 
     def cancel(self):
