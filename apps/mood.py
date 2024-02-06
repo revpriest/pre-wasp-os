@@ -16,11 +16,14 @@ This app allows you to set a mood and status to be logged.
 # by placing a file in /flash/activities.csv containing
 # all the categories comma-separated in the first row.
 # Be frugal: we are tight on RAM.
+# We try and upload that while not in foreground.
 # 
 # Should be a single line but I find the wasp tool won't
 # upload a file which is less than 64 bytes long so you may 
 # pad it with junk to be ignored in the second line if it's 
 # less.
+#
+# Can now set it with the monographer companion tool.
 
 import wasp
 import watch
@@ -76,18 +79,6 @@ class MoodApp():
         self._startedit = (0.5,0.5)
         self._lastlogrotate = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
         self._cacheentry = self._cacheprior = _blankentry
-        self._activities  = ["slack","social","work", "sleep", "exercise", "travel", "cooking", "tv", "games", "project"]
-          
-
-        gc.collect()
-        try:
-          with open("/flash/activities.csv", 'r') as f:
-            l = f.readline()
-            for i in l.split(","):
-              self._activities.append(i.strip())
-        except Exception as e:
-            print("ActLoadExcep:" +str(e))
-        gc.collect()
         self._load()
         self._reset()
 
@@ -99,9 +90,11 @@ class MoodApp():
         self._showdaydiff=0;
         self._filediff    = ""
         self._load()
+        del(self._activities)
 
     def wake(self):
         self._update()
+        self._load_acts()
 
     def foreground(self):
         wasp.system.bar.clock = True
@@ -110,6 +103,19 @@ class MoodApp():
         self._reset()
         self._draw()
         wasp.system.request_tick(500)
+        self._load_acts()
+
+    def _load_acts(self):
+        gc.collect()
+        self._activities = ["slack", "social", "work", "sleep", "exercise", "travel", "cooking", "tv", "games", "project"]
+        try:
+          with open("/flash/activities.csv", 'r') as f:
+            l = f.readline()
+            for i in l.split(","):
+              self._activities.append(i.strip())
+        except Exception as e:
+            print("ActLoadExcep:" +str(e))
+        gc.collect()
 
     #Reset the cache-entry to be the next one in line
     def _reset(self):
@@ -527,14 +533,15 @@ class MoodApp():
        
     #Change currently selected activity
     def _act_change(self,direction):
-        self._currentact+=direction
-        if(self._currentact>=len(self._activities)):
-          self._currentact=0
-        if(self._currentact<0):
-          self._currentact=len(self._activities)-1
-        if(self._cacheentry==None):
-          self._cacheentry = [self._get_rounded_now(5),(0.5,0.5),""]
-        self._cacheentry[2] = self._activities[self._currentact]
+        if(hasattr(self,"_activities")):
+            self._currentact+=direction
+            if(self._currentact>=len(self._activities)):
+              self._currentact=0
+            if(self._currentact<0):
+              self._currentact=len(self._activities)-1
+            if(self._cacheentry==None):
+              self._cacheentry = [self._get_rounded_now(5),(0.5,0.5),""]
+            self._cacheentry[2] = self._activities[self._currentact]
 
 
 
