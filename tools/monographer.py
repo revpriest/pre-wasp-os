@@ -188,8 +188,12 @@ class Monographer(QMainWindow):
         self.lviews[name].selectionModel().selectionChanged.connect(lambda: self.update_selected_files(name,self.lviews[name], text_edit))
         return tab
 
+
+
     def on_pick(self,event):
         """ Clicked on the chart? """
+        if((event.mouseevent.button =="down") or (event.mouseevent.button =="up")):
+            return
         l = event.artist.get_label()
         if(l in self.catcols.keys()):
             del(self.catcols[l])
@@ -209,7 +213,7 @@ class Monographer(QMainWindow):
                                         self.dialog.show()
                                         return
                         except Exception as e:
-                            print("Excep:"+str(e))
+                            #print("Excep:"+str(e))
                             pass
                         
                         ets = int(mdates.num2date(ts).timestamp())
