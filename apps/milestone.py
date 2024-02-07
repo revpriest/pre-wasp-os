@@ -175,7 +175,7 @@ class MilestoneApp():
             with open(tfname, 'a') as file:
                 file.seek(0, 2)       #0 bytes from end
                 file.write(tstr)
-        except FileNotFoundError as e:
+        except Exception as e:
             print("nonode:"+str(fname))
             pass
 
@@ -208,7 +208,7 @@ class MilestoneApp():
                     return("{}".format(num),s)
                 else:
                     return("{:d}".format(num),"??");
-        except FileNotFoundError as e:
+        except Exception as e:
             pass
         return "0","-0s"
         
@@ -221,9 +221,8 @@ class MilestoneApp():
 
         try: 
             with open(tfname, 'r') as file:
-                print(tfname+" exists, boring")
                 pass
-        except FileNotFoundError as e:
+        except Exception as e:
             lf = "--==leafnode==--"
             try:
                 with open(tfname, 'w') as file:
