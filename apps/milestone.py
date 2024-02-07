@@ -64,6 +64,7 @@ class MilestoneApp():
             del(self._data)
         if(hasattr(self,"_fullpath")):
             del(self._fullpath)
+        gc.collect()
         pass
 
     def unregister(self):
@@ -249,7 +250,9 @@ class MilestoneApp():
     def _addtimestamps(self):
         tstr = self._nowstr()
         for fn in self._fullpath:
+            gc.collect()
             self._savelast(self._fullname(fn),tstr)
+        self._cornerfills(-1)
         wasp.system.switch(wasp.system.quick_ring[0])
             
        
