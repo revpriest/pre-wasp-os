@@ -2,6 +2,10 @@
 # At least one watch face must be specified. Quick ring apps will be added in order.
 
 [[app]]
+file = 'apps/milestone.py'
+auto_load = true
+
+[[app]]
 file = 'apps/stopwatch.py'
 quick_ring = true
 
