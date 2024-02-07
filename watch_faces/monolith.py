@@ -975,6 +975,8 @@ class MonolithApp():
         wasp.watch.accel.steps = 0
         if(hasattr(wasp,'mood_logrotate')):
           wasp.mood_logrotate()
+        if(hasattr(wasp,'mile_logrotate')):
+          wasp.mile_logrotate()
 
     # Countdown
     def _butcdown(self):
