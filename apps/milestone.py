@@ -52,7 +52,7 @@ class MilestoneApp():
     NAME = "Milestone"
 
     def __init__(self):
-        pass
+        wasp.mile_logrotate = self._logrotate
 
     def foreground(self):
         wasp.system.request_event(wasp.EventMask.TOUCH)
@@ -64,6 +64,10 @@ class MilestoneApp():
             del(self._data)
         if(hasattr(self,"_fullpath")):
             del(self._fullpath)
+        pass
+
+    def unregister(self):
+        del(wasp.mile_logrotate)
         pass
 
     def touch(self, event):
@@ -83,8 +87,6 @@ class MilestoneApp():
 
 
     def _cornerbuttons(self,fname,bgcol=0x59af,fgcol=0xffff):
-        if(fname=="MJ"):
-            self._logrotate()
         wasp.system.bar.clock = True
         wasp.system.bar.draw()
         draw = wasp.watch.drawable
