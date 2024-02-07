@@ -15,29 +15,15 @@ tracking what food & drink is consumed but it's not proscriptive.
 # We wanna work entirely through the filesystem really,
 # very very few RAM vars if we can help it.
 #
-# We call 'em csv but there's only one column so no actual commas.
-# start with index.csv
-# Every row is 16 chars long
-# first 4 rows are names/topics.
-# next X rows are timestamps
+# So the filesystem as currently implimented is bullshit.
+# Why so complex? Why put the timestamps on the same files
+# as the menu-names? WTF were you thinking? Trying to be all
+# fancy.
 # 
-# We can open the file read the first 64
-# bytes as button-headers and skip to the
-# end-16 to get the most recent timestamp
-# and /16-4 is the number of entries.
+# Four lines in the index file, plus a _stamps that has the
+# times of the actual milestones in it.
 #
-# So, logrotation. Hummm.
-#
-# Every day with a way to view prior days
-# I guess, so we can have some kinda date-prefix
-# directory on all but today.
-#
-# Log-rotate can copy the first 4 lines of all
-# files into a new skeleton, and also the last
-# line so that we always know where to look back
-# for prior.
-#
-# Generally ignore first line in counts?
+
 #
 # 
 
@@ -52,24 +38,49 @@ class MilestoneApp():
     NAME = "Milestone"
 
     def __init__(self):
+        import os
+        try:
+            os.mkdir("/flash/logs")
+        except:
+            pass
+        try:
+            os.mkdir("/flash/logs/mile")
+        except:
+            pass
+        try:
+            os.mkdir("/flash/logs/milelog")
+        except:
+            pass
+        del(os)
         wasp.mile_logrotate = self._logrotate
 
+
     def foreground(self):
-        wasp.system.request_event(wasp.EventMask.TOUCH)
+        wasp.system.request_event(wasp.EventMask.SWIPE_UPDOWN | wasp.EventMask.TOUCH)
         self._fullpath = []
         self._cornerbuttons("index")
 
+
     def background(self):
+        gc.collect()
         if(hasattr(self,"_data")):
             del(self._data)
         if(hasattr(self,"_fullpath")):
             del(self._fullpath)
-        gc.collect()
         pass
+
 
     def unregister(self):
         del(wasp.mile_logrotate)
         pass
+
+
+    def swipe(self, event):
+        if event[0] == wasp.EventType.DOWN:
+            self._cornerbuttons("opt")
+            return False
+        return True 
+
 
     def touch(self, event):
         if(event[2]<120):
@@ -88,73 +99,85 @@ class MilestoneApp():
 
 
     def _cornerbuttons(self,fname,bgcol=0x59af,fgcol=0xffff):
-        wasp.system.bar.clock = True
-        wasp.system.bar.draw()
+        (fname,xcol) = self._splitname(fname,bgcol)
         draw = wasp.watch.drawable
         draw.fill(0, 0, 0, 240, 32)
-        draw.fill(bgcol, 0, 32, 240, 208)
+        wasp.system.bar.clock = True
+        wasp.system.bar.draw()
         draw.set_color(fgcol,bgcol)
-        draw.line(  1,  120, 238, 120, 4, 0x0000) 
-        draw.line(120,   1,  120, 214, 4, 0x0000)
         self._loaddata(fname)
         if(hasattr(self,"_data")):
             self._fullpath.append(fname)
-            if(self._data[0]=="--==leafnode==--"):
-                self._addtimestamps()
+            if(self._data==0):
+                #No more buttons, we hit the leaf
+                return self._addtimestamps()
             else:
                 if(len(self._data)>4):
-                    draw.set_color(bgcol,fgcol)
+                    draw.fill(fgcol, 0, 220, 240, 5)
                     draw.set_font(fonts.sans18)
-                    draw.string(self._tstostr(self._data[4])[0:16],0, 220, width=240)
+                    draw.set_color(0x0000,0xffff)
+                    draw.string(self._tstostr(self._data[4])[0:16],0, 222, width=240)
                 if(len(self._data)>0):
-                    ll = self._loadlast(self._data[0])
-                    draw.set_font(fonts.sans24)
-                    draw.set_color(fgcol,bgcol)
-                    draw.string(self._data[0],               0,   47, width=116)
-                    draw.set_font(fonts.sans18)
-                    draw.set_color(fgcol,bgcol)
-                    draw.string(ll[0],0,   71, width=116)
-                    draw.string(ll[1],0,   96, width=116)
+                    self._cornerbutton(0,0,32,120,93,bgcol,fgcol)
                 if(len(self._data)>1):
-                    ll = self._loadlast(self._data[1])
-                    draw.set_font(fonts.sans24)
-                    draw.set_color(fgcol,bgcol)
-                    draw.string(self._data[1],123, 47, width=116)
-                    draw.set_font(fonts.sans18)
-                    draw.set_color(fgcol,bgcol)
-                    draw.string(ll[0],123,   71, width=116)
-                    draw.string(ll[1],123,   96, width=116)
+                    self._cornerbutton(1,120,32,120,93,bgcol,fgcol)
                 if(len(self._data)>2):
-                    ll = self._loadlast(self._data[2])
-                    draw.set_font(fonts.sans24)
-                    draw.set_color(fgcol,bgcol)
-                    draw.string(self._data[2],0,   145, width=116)
-                    draw.set_font(fonts.sans18)
-                    draw.set_color(fgcol,bgcol)
-                    draw.string(ll[0],0,   169, width=116)
-                    draw.string(ll[1],0,   194, width=116)
+                    self._cornerbutton(2,0,129,120,93,bgcol,fgcol)
                 if(len(self._data)>3):
-                    ll = self._loadlast(self._data[3])
-                    draw.set_font(fonts.sans24)
-                    draw.set_color(fgcol,bgcol)
-                    draw.string("{}".format(self._data[3]),123, 145, width=116)
-                    draw.set_font(fonts.sans18)
-                    draw.set_color(fgcol,bgcol)
-                    draw.string(ll[0],123, 169, width=116)
-                    draw.string(ll[1],123, 194, width=116)
+                    self._cornerbutton(3,120,129,120,93,bgcol,fgcol)
+            draw.line(  1,  127, 238, 127, 4, 0x0000) 
+            draw.line(119,   1,  119, 219, 4, 0x0000)
+
+
+    def _cornerbutton(self,n,x,y,w,h,col,fgcol):
+        draw = wasp.watch.drawable
+        s = self._data[n]
+        if isinstance(s, str):
+            (s,col) = self._splitname(s,col)
+            ll = self._loadts(s)
+        else:
+          ll = [s[1],s[2]]
+          s = s[0]
+        draw.fill(col, x, y, w, h)
+        draw.set_font(fonts.sans24)
+        draw.set_color(fgcol,col)
+        draw.string(s.capitalize(),  x,   y+11, width=117)
+        draw.set_font(fonts.sans18)
+        draw.set_color(fgcol,col)
+        draw.string(ll[0],           x,   y+46, width=117)
+        draw.string(ll[1],           x,   y+64, width=117)
+
+
+    def _splitname(self,tosplit,defaultcol):
+        """ If the node-name has a comma then its probably got a color """
+        col = -1
+        try:
+            bits = tosplit.split(",")
+            if(len(bits)<=1):
+                return (tosplit,defaultcol)
+            try:
+                col = int(bits[1],16)
+            except:
+                pass
+            if((col <= 16777215)and(col>=0)):
+                return (bits[0],col)
+            return(bits[0],0)
+        except Exception as e:
+            print("Except:"+str(e)+":"+str(tosplit)) 
+        return(tosplit,defaultcol)
 
 
     # Blank out all but the touched button 
     def _cornerfills(self,idx):
       draw = wasp.watch.drawable
       if(idx!=0):
-        draw.fill(0x0000,   0,  32, 119, 88)
+        draw.fill(0x0000,   0,  32, 120, 93)
       if(idx!=1):
-        draw.fill(0x0000, 120,  32, 119, 88)
+        draw.fill(0x0000, 120,  32, 120, 93)
       if(idx!=2):
-        draw.fill(0x0000,   0, 120, 119, 88)
+        draw.fill(0x0000,   0, 129, 120, 93)
       if(idx!=3):
-        draw.fill(0x0000, 120, 120, 119, 88)
+        draw.fill(0x0000, 120, 129, 120, 93)
 
 
     #Our screen is touched at an index number
@@ -162,113 +185,145 @@ class MilestoneApp():
         self._cornerfills(idx)
         if(hasattr(self,"_data")):
             if(len(self._data)>idx):
-               return self._cornerbuttons(self._data[idx])
+                if isinstance(self._data[0], str):
+                    return self._cornerbuttons(self._data[idx])
+                else:
+                    return self._execute_option(self._data[idx]) 
         wasp.system.switch(wasp.system.quick_ring[0])
 
 
-    def _fullname(self,fname):
-        return "/flash/logs/mile/{}.csv".format(fname)
+    def _execute_option(self,opt):
+        if(opt[0]=="log"):
+            self._logrotate()
+        else:
+            pass
+        self._cornerbuttons("index")
+        
+
+    # We have 3 files for each milestone type,
+    # the "main" is in /mile/{name} and tells us what buttons to draw
+    # the "now" is in /milelog/{name}_latest and is the most recent timestamp
+    # the "log" is in /milelog/{name}_log and is appended at each milestone
+    # The "log" is rotated into a directory each night (or week?)
+    # so the latest count for "done today (or this week?) is the size of the record file.
+    # there are good reasons to expect any of these files to be empty,
+    # either for leaf nodes with no buttons or but buttons never
+    # yet pressed or for buttons pressed but not yet today (or week?)
+    #
+    def _fullname(self,fname,x="m"):
+        if(x=="m"): #main
+            return "/flash/logs/mile/{}.csv".format(fname.lower())
+        elif(x=="n"):   #now
+            return "/flash/logs/milelog/{}_now.csv".format(fname.lower())
+        else:   #Implied "l" for log record
+            return "/flash/logs/milelog/{}_log.csv".format(fname.lower())
 
 
-    def _savelast(self,tfname,tstr):
+    def _savemilepassed(self,fname,tstr):
         """ we append a timestamp to the file, it's been immantized """
+        rfname = self._fullname(fname,"l")
         try:
-            with open(tfname, 'a') as file:
+            with open(rfname, 'a') as file:
                 file.seek(0, 2)       #0 bytes from end
                 file.write(tstr)
         except Exception as e:
-            print("nonode:"+str(fname))
             pass
 
-    def _loadlast(self,fname):
-        """ A display string for the node based on it's final line """
-        tfname = self._fullname(fname)
+        rfname = self._fullname(fname,"n")
+        try:
+            with open(rfname, 'w') as file:
+                file.write(tstr)
+        except Exception as e:
+            pass
+
+
+    def _loadts(self,fname):
+        """ two display strings for the latest timestamp, diff and count """
+        s="??"
         d = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
+        d2 = self._loadt(fname) - d
+        if(abs(d2)<60):
+          s="{}s".format(int(d2))
+        elif(abs(d2)<60*60):
+          s="{}m".format(int(d2/60))
+        elif(abs(d2)<24*60*60):
+          s="{}h".format(int(d2/60/60))
+        elif(abs(d2)<7*60*60):
+          s="{}d".format(int(d2/24/60/60))
+        elif(abs(d2)<7*60*60):
+          s="{}w".format(int(d2/7/24/60/60))
+        elif(abs(d2)<7*60*60):
+          s="{}y".format(int(d2/365/24/60/60))
+
+        cnt=0
+        tfname = self._fullname(fname,"l")
         try:
             with open(tfname, 'r') as file:
                 file.seek(0, 2)       #0 bytes from end
                 length = file.tell()
-                num = int((length/17)-5)    #4 names, plus one hang-over date from previous logrotate
-                if(num>=0):
-                    file.seek(length-17, 0)
-                    d2 = self._parsedate(file.read(17).strip())
-                    d2 = d2-d
-                    s="??"
-                    if(abs(d2)<60):
-                      s="{}s".format(int(d2))
-                    elif(abs(d2)<60*60):
-                      s="{}m".format(int(d2/60))
-                    elif(abs(d2)<24*60*60):
-                      s="{}h".format(int(d2/60/60))
-                    elif(abs(d2)<7*60*60):
-                      s="{}d".format(int(d2/24/60/60))
-                    elif(abs(d2)<7*60*60):
-                      s="{}w".format(int(d2/7/24/60/60))
-                    elif(abs(d2)<7*60*60):
-                      s="{}y".format(int(d2/365/24/60/60))
-                    return("{}".format(num),s)
-                else:
-                    return("{:d}".format(num),"??");
+                cnt = int(length/20)
         except Exception as e:
             pass
-        return "0","-0s"
-        
-        
+        return("{}".format(cnt),s)
 
-    #Each row is 17 bytes including the \n at the end of the row
-    def _loaddata(self,fname):
-        d = []
-        tfname = self._fullname(fname)
 
-        try: 
+    def _loadt(self,fname):
+        """ Get the unix timestamp for the latest milestone event """
+        tfname = self._fullname(fname,"n")
+        d = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
+        try:
             with open(tfname, 'r') as file:
-                pass
+                 return self._parsedate(file.read(20).strip())
         except Exception as e:
-            lf = "--==leafnode==--"
-            try:
-                with open(tfname, 'w') as file:
-                    file.write(lf+"\n")
-                    file.write(fname + (' ' * (16 - len(fname))+"\n"))
-                    file.write((" "*16)+"\n")
-                    file.write(lf+"\n")
-                    file.write(self._nowstr())
-            except Exception as e:
-                print("Can't create leaf milestone "+tfname)
-                pass
+            print("EXE34:"+str(e))
+            pass
+        return 0
+        
+        
 
-        with open(tfname, 'r') as file:
-            file.seek(0, 2)       #0 bytes from end
-            length = file.tell()
-            file.seek(0, 0)
-            for i in range(0,4):
-                d.append(file.read(17).strip())   #Four corner names
-            file.seek(length-17, 0)     
-            d.append(self._parsedate(file.read(17).strip()))
+    #4 rows, comma-separated. Name, then col.
+    def _loaddata(self,fname):
+        if(fname=="opt"):
+            self._data = [["log","rotate","now"],[" "," "," "],[" "," "," "],[" "," "," "]]
+            return self._data
+        d = []
+        tfname = self._fullname(fname,"m")
+        self._data = None
+        try:
+            with open(tfname, 'r') as file:
+                for i in range(0,4):
+                    s = file.readline()
+                    d.append(s)
+            d.append(self._loadt(fname))
             self._data = d
+        except:
+            #No file? Leaf node!
+            self._data = 0
+        return self._data
 
 
     def _addtimestamps(self):
         tstr = self._nowstr()
         for fn in self._fullpath:
             gc.collect()
-            self._savelast(self._fullname(fn),tstr)
-        self._cornerfills(-1)
+            self._savemilepassed(fn,tstr)
+        wasp.watch.drawable.fill(0x03, 0, 0, 240, 240)
         wasp.system.switch(wasp.system.quick_ring[0])
             
        
     def _nowstr(self):
         now = wasp.watch.rtc.get_localtime()
-        return("{:04d}-{:02d}-{:02d} {:02d}:{:02d}\n".format(now[0],now[1],now[2],now[3],now[4]))
+        return("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}\n".format(now[0],now[1],now[2],now[3],now[4],now[5]))
     
     def _tstostr(self,ts):
         ttuple = time.localtime(ts)
-        return("{:04d}-{:02d}-{:02d} {:02d}:{:02d}".format(ttuple[0], ttuple[1], ttuple[2], ttuple[3], ttuple[4]))
+        return("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(ttuple[0], ttuple[1], ttuple[2], ttuple[3], ttuple[4],ttuple[5]))
 
  
     def _parsedate(self,dstring):
         if((dstring==None)or(dstring=="")):
             return 0
-        date_tuple = tuple(map(int, dstring.replace(":", "-").replace(" ", "-").split("-"))) + (0, 0, 0, 0)
+        date_tuple = tuple(map(int, dstring.replace(":", "-").replace(" ", "-").split("-"))) + (0, 0, 0)
         dt = time.mktime(date_tuple)
         return dt
 
@@ -278,32 +333,19 @@ class MilestoneApp():
         from shell import mv
         import os
         now = wasp.watch.rtc.get_localtime()
-        dest = "/flash/logs/milelog"
+        dest = "/flash/logs/milelog_{:04d}-{:02d}-{:02d}_{:02d}".format(now[0],now[1],now[2],now[3])
         try:
           os.mkdir(dest)
         except FileExistsError:
             pass
-        dest+= "/{:04d}-{:02d}-{:02d}_{:02d}".format(now[0],now[1],now[2],now[3])
-        try:
-            os.mkdir(dest)
-        except FileExistsError:
-            pass
         dest+="/"
-        files = wasp.watch.os.listdir("/flash/logs/mile/")
+        files = wasp.watch.os.listdir("/flash/logs/milelog/")
         for file in files:
-            print("Rotating log file:"+file)
-            mv("/flash/logs/mile/"+file,dest+file)
-            with open(dest+file, 'r') as sfile:
-                sfile.seek(0, 2)
-                length = sfile.tell()
-                sfile.seek(0, 0)
-                with open("/flash/logs/mile/"+file, 'w') as dfile:
-                    for i in range(0,4):
-                        l = sfile.read(17)
-                        dfile.write(l)
-                    sfile.seek(length-17, 0)
-                    l = sfile.read(17)
-                    dfile.write(l)
+            if(file.endswith("_log.csv")):
+                print("Rotating log file:"+file)
+                mv("/flash/logs/milelog/"+file,dest+file)
+            else:
+                print("Skipping non-log file "+file)
             gc.collect()
         del(mv)
         del(os)
