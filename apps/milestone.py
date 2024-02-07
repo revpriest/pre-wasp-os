@@ -52,7 +52,7 @@ class MilestoneApp():
     NAME = "Milestone"
 
     def __init__(self):
-        pass
+        wasp.mile_logrotate = self._logrotate
 
     def foreground(self):
         wasp.system.request_event(wasp.EventMask.TOUCH)
@@ -64,6 +64,10 @@ class MilestoneApp():
             del(self._data)
         if(hasattr(self,"_fullpath")):
             del(self._fullpath)
+        pass
+
+    def unregister(self):
+        del(wasp.mile_logrotate)
         pass
 
     def touch(self, event):
