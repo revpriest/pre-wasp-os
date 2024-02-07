@@ -83,8 +83,6 @@ class MilestoneApp():
 
 
     def _cornerbuttons(self,fname,bgcol=0x59af,fgcol=0xffff):
-        if(fname=="MJ"):
-            self._logrotate()
         wasp.system.bar.clock = True
         wasp.system.bar.draw()
         draw = wasp.watch.drawable
