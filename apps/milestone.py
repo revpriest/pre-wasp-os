@@ -337,7 +337,12 @@ class MilestoneApp():
           os.mkdir(dest)
         except Exception:
             pass
-        dest += "/milelog_{:04d}-{:02d}-{:02d}_{:02d}".format(now[0],now[1],now[2],now[3])
+        dest += "/mile"
+        try:
+          os.mkdir(dest)
+        except Exception:
+            pass
+        dest +="/{:04d}-{:02d}-{:02d}_{:02d}".format(now[0],now[1],now[2],now[3])
         try:
           os.mkdir(dest)
         except Exception:
