@@ -182,7 +182,7 @@ class MilestoneApp():
     def _loadlast(self,fname):
         """ A display string for the node based on it's final line """
         tfname = self._fullname(fname)
-        d = time.time()
+        d = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
         try:
             with open(tfname, 'r') as file:
                 file.seek(0, 2)       #0 bytes from end
