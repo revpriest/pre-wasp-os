@@ -15,9 +15,6 @@ wasp/appregistry.py
 .idea
 .vscode
 activities.csv
-<<<<<<< HEAD
 preferences.csv
-=======
->>>>>>> mood
-logs/
 monographer_settings.json
+logs/

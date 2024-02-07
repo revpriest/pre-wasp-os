@@ -6,6 +6,10 @@ file = 'apps/mood.py'
 quick_ring = true
 
 [[app]]
+file = 'apps/milestone.py'
+quick_ring = true
+
+[[app]]
 file = 'apps/space_font.py'
 auto_load = true
 
