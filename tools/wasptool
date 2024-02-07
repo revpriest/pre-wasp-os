@@ -23,7 +23,10 @@ def draw_pbar(percent, quiet=False, end='\r'):
         print(f'[{"#"*bar}{"."*(50-bar)}] {round(percent, 1)}%     ', end=end, flush=True)
 
 def pbar(iterable, quiet=False):
-    step = 100 / len(iterable)
+    if(len(iterable)>0):
+        step = 100 / len(iterable)
+    else:
+        step = 100
 
     for i, v in enumerate(iterable):
         draw_pbar(step * i, quiet)
