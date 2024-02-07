@@ -227,8 +227,8 @@ class MilestoneApp():
             try:
                 with open(tfname, 'w') as file:
                     file.write(lf+"\n")
-                    file.write(fname.ljust(16)+"\n")
-                    file.write(("".ljust(16))+"\n")
+                    file.write(fname + (' ' * (16 - len(fname))+"\n"))
+                    file.write((" "*16)+"\n")
                     file.write(lf+"\n")
                     file.write(self._nowstr())
             except Exception as e:
