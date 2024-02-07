@@ -275,7 +275,6 @@ class MilestoneApp():
             with open(tfname, 'r') as file:
                  return self._parsedate(file.read(20).strip())
         except Exception as e:
-            print("EXE34:"+str(e))
             pass
         return 0
         
@@ -333,10 +332,15 @@ class MilestoneApp():
         from shell import mv
         import os
         now = wasp.watch.rtc.get_localtime()
-        dest = "/flash/logs/milelog_{:04d}-{:02d}-{:02d}_{:02d}".format(now[0],now[1],now[2],now[3])
+        dest = "/flash/logs/{:04d}".format(now[0])
         try:
           os.mkdir(dest)
-        except FileExistsError:
+        except Exception:
+            pass
+        dest += "/milelog_{:04d}-{:02d}-{:02d}_{:02d}".format(now[0],now[1],now[2],now[3])
+        try:
+          os.mkdir(dest)
+        except Exception:
             pass
         dest+="/"
         files = wasp.watch.os.listdir("/flash/logs/milelog/")
