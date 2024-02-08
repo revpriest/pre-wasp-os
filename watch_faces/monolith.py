@@ -965,12 +965,15 @@ class MonolithApp():
 
     def _butreset(self):
         self._longvars[_STEPSSINCE] = 0
+        #We aren't supposed to do this here, this is just for test.
         self._logrotate()
 
 
     #When to reset step-counter and rotate the logs in the apps that want it
     def _logrotate(self):
-        self._longvars[_STEPSATLASTLOG] = self._longvars[_STEPSSINCE] = self._longvars[_STEPCOUNT] = 0
+        self._longvars[_STEPSATLASTLOG] = 0
+        self._longvars[_STEPSSINCE] = 0
+        self._longvars[_STEPCOUNT] = 0
         self._longvars[_MISSEDSTEPS] = 0
         wasp.watch.accel.steps = 0
         if(hasattr(wasp,'mood_logrotate')):
