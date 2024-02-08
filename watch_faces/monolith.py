@@ -37,6 +37,7 @@ import wasp
 import time
 import array
 import gc
+import fonts
 from micropython import const
 
 #We use a word-array for as many vars as possible for memory reasons
@@ -482,8 +483,10 @@ class MonolithApp():
               wasp.watch.drawable.blit(self._fontref[self._now[4] // 10], 110, 70, fg=self._wordvars[_CLOCKCOL])
               wasp.watch.drawable.blit(self._fontref[self._now[4]  % 10], 155, 70, fg=self._wordvars[_CLOCKCOL])
         else:
-            wasp.watch.drawable.string("{:02d}".format(self._now[3]),  23, 80, width=45)
-            wasp.watch.drawable.string("{:02d}".format(self._now[4]), 123, 80, width=45)
+            wasp.watch.drawable.set_font(fonts.sans36)
+            wasp.watch.drawable.string("{:02d}".format(self._now[3]),  23, 75, width=45)
+            wasp.watch.drawable.string("{:02d}".format(self._now[4]), 123, 75, width=45)
+            wasp.watch.drawable.set_font(fonts.sans24)
 
 
         #Cdown/Stop-Watch/Alarm times below
