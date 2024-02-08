@@ -69,6 +69,7 @@ class MoodApp():
         #Make methods available to the watch-faces.
         wasp.mood_draw = self._draw_mood_face
         wasp.mood_logrotate = self._logrotate
+        self._cacheentry = _blankentry
 
     def unregister(self):
         del(wasp.mood_draw)
@@ -86,7 +87,6 @@ class MoodApp():
             del(self._editingface)
             del(self._startedit)
             del(self._lastlogrotate)
-            del(self._cacheentry)
         except:
             pass
 
@@ -101,7 +101,7 @@ class MoodApp():
         self._editingface = None        ##Or the starting accelerator coords if editing
         self._startedit = (0.5,0.5)
         self._lastlogrotate = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
-        self._cacheentry = self._cacheprior = _blankentry
+        self._cacheprior = _blankentry
         self._load()
         self._reset()
         self._update()
@@ -278,12 +278,12 @@ class MoodApp():
         x = int(x)
         y = int(y)
         if(happy==None):
-          if(self._cacheentry==None):
+          if((not hasattr(self,"_cacheentry")) or (self._cacheentry==None)):
             happy=0.5
           else:
             happy = self._cacheentry[1][0]
         if(awake==None):
-          if(self._cacheentry==None):
+          if((not hasattr(self,"_cacheentry")) or (self._cacheentry==None)):
             awake=0.5
           else:
             awake = self._cacheentry[1][1]
