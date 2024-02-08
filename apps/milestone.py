@@ -79,6 +79,9 @@ class MilestoneApp():
         if event[0] == wasp.EventType.DOWN:
             self._cornerbuttons("opt")
             return False
+        if event[0] == wasp.EventType.UP:
+            wasp.system.switch(wasp.system.quick_ring[0])
+            return False
         return True 
 
 
@@ -107,7 +110,7 @@ class MilestoneApp():
         draw.set_color(fgcol,bgcol)
         self._loaddata(fname)
         if(hasattr(self,"_data")):
-            self._fullpath.append(fname)
+            self._fullpath.append((fname,xcol))
             if(self._data==0):
                 #No more buttons, we hit the leaf
                 return self._addtimestamps()
@@ -186,8 +189,10 @@ class MilestoneApp():
         if(hasattr(self,"_data")):
             if(len(self._data)>idx):
                 if isinstance(self._data[0], str):
+                    #a normal labelled button for filesystem
                     return self._cornerbuttons(self._data[idx])
                 else:
+                    #a special list of strings for a options screent
                     return self._execute_option(self._data[idx]) 
         wasp.system.switch(wasp.system.quick_ring[0])
 
@@ -282,9 +287,12 @@ class MilestoneApp():
 
     #4 rows, comma-separated. Name, then col.
     def _loaddata(self,fname):
+        #Special sets not in the filesystem
         if(fname=="opt"):
             self._data = [["log","rotate","now"],[" "," "," "],[" "," "," "],[" "," "," "]]
             return self._data
+
+        #Normal file-system views
         d = []
         tfname = self._fullname(fname,"m")
         self._data = None
@@ -302,12 +310,33 @@ class MilestoneApp():
 
 
     def _addtimestamps(self):
+        wasp.watch.drawable.fill(0x0000, 0, 32, 240, 208)
+        wasp.watch.drawable.set_font(fonts.sans24)
+        y=37
         tstr = self._nowstr()
+        s = self._fullpath[len(self._fullpath)-1][0]
+        lastf=None
         for fn in self._fullpath:
             gc.collect()
-            self._savemilepassed(fn,tstr)
-        wasp.watch.drawable.fill(0x03, 0, 0, 240, 240)
-        wasp.system.switch(wasp.system.quick_ring[0])
+            self._savemilepassed(fn[0],tstr)
+            if(fn[0]!="index"):
+                if(y<190): 
+                   wasp.watch.drawable.set_color(0xffff, fn[1])
+                   wasp.watch.drawable.string(fn[0],0, y, width=240)
+                y+=25
+            lastf=fn[0]
+        wasp.watch.drawable.set_color(0xffff, 0)
+        if(y<196):
+            y=196
+
+        if(y<197): 
+            cnt = self._loadts(lastf)
+            wasp.watch.drawable.string(str(cnt[0]),0, y, width=240, right=True)
+            y+=25
+        wasp.watch.drawable.set_font(fonts.sans18)
+        if(y<222): 
+           wasp.watch.drawable.string(tstr.strip(),0, y, width=240, right=True)
+           y+=18
             
        
     def _nowstr(self):
