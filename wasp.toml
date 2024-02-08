@@ -34,18 +34,10 @@ file = 'apps/digi_font.py'
 #[[app]] # If only one watch face is included this app can be removed
 #file = 'apps/faces.py'
 #auto_load = true
-#no_except = true
 
 [[watchface]]
 file = 'watch_faces/monolith.py'
 default = true
 
-#[[watchface]]
-#file = 'watch_faces/clock.py'
-
-#[[watchface]] # Requires ClockApp to also be installed
-#file = 'watch_faces/week_clock.py'
-
-#[[watchface]]
-#file = 'watch_faces/chrono.py'
-
+[[watchface]]
+file = 'watch_faces/chrono.py'
