@@ -141,7 +141,7 @@ class MilestoneApp():
         draw.fill(col, x, y, w, h)
         draw.set_font(fonts.sans24)
         draw.set_color(fgcol,col)
-        draw.string(s.capitalize(),  x,   y+11, width=117)
+        draw.string(s[0].upper() + s[1:] if s else "",  x,   y+11, width=117)
         draw.set_font(fonts.sans18)
         draw.set_color(fgcol,col)
         draw.string(ll[0],           x,   y+46, width=117)
@@ -351,10 +351,11 @@ class MilestoneApp():
         files = wasp.watch.os.listdir("/flash/logs/milelog/")
         for file in files:
             if(file.endswith("_log.csv")):
-                print("Rotating log file:"+file)
+                #print("Rotating log file:"+file)
                 mv("/flash/logs/milelog/"+file,dest+file)
             else:
-                print("Skipping non-log file "+file)
+                #print("Skipping non-log file "+file)
+                pass
             gc.collect()
         del(mv)
         del(os)
