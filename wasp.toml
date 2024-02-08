@@ -22,8 +22,8 @@ file = 'apps/digi_font.py'
 #[[app]]
 #file = 'apps/scifi_font.py'
 
-[[app]]
-file = 'apps/snake.py'
+#[[app]]
+#file = 'apps/snake.py'
 
 #[[app]]
 #file = 'apps/heart.py'
