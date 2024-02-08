@@ -2,6 +2,10 @@
 # At least one watch face must be specified. Quick ring apps will be added in order.
 
 [[app]]
+file = 'apps/mood.py'
+auto_load = true
+
+[[app]]
 file = 'apps/stopwatch.py'
 
 [[app]]
@@ -15,10 +19,6 @@ file = 'apps/timer.py'
 
 [[app]]
 file = 'apps/calculator.py'
-
-[[app]]
-file = 'apps/mood.py'
-quick_ring = true
 
 
 [[app]] # If only one watch face is included this app can be removed
