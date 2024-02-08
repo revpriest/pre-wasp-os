@@ -39,5 +39,5 @@ file = 'apps/digi_font.py'
 file = 'watch_faces/monolith.py'
 default = true
 
-[[watchface]]
-file = 'watch_faces/chrono.py'
+#[[watchface]]
+#file = 'watch_faces/chrono.py'
