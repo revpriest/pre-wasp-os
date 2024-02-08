@@ -128,7 +128,7 @@ class MilestoneApp():
                     self._cornerbutton(2,0,129,120,93,bgcol,fgcol)
                 if(len(self._data)>3):
                     self._cornerbutton(3,120,129,120,93,bgcol,fgcol)
-            draw.line(  1,  127, 238, 127, 4, 0x0000) 
+            draw.line(  1,  126, 238, 126, 4, 0x0000) 
             draw.line(119,   1,  119, 219, 4, 0x0000)
 
 
