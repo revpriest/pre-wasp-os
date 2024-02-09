@@ -100,7 +100,6 @@ class MoodApp():
         self._reset()
         self._draw()
         wasp.system.request_tick(500)
-        self._load_acts()
 
     def _load_acts(self):
         gc.collect()
