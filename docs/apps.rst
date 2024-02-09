@@ -84,6 +84,8 @@ Applications
 
 .. automodule:: milestone
 
+.. automodule:: mood
+
 Games
 -----
 
