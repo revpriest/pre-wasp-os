@@ -141,7 +141,7 @@ class MonolithApp():
             self._switchscreen(0)
             self._longvars[_TOUCHTIME]= 0
         except Exception as e:
-            print("Except:"+str(e))
+            print("E:"+str(e))
 
 
     def _reset(self):
@@ -271,7 +271,7 @@ class MonolithApp():
               for i in range(0,timestowrite):
                 file.write(strtowrite)
         except Exception as e:  # Didn't exist?
-            print("StepLogExcep3:"+str(e))
+            print("SLE3: "+str(e))
             wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":"LogFail","body":"Can't write step-log file:"+str(e)})
         self._longvars[_STEPSATLASTLOG] = self._longvars[_STEPCOUNT]
         gc.collect()
@@ -335,7 +335,7 @@ class MonolithApp():
                             self._now[0],self._now[1],self._now[2],self._now[3],self._now[4],self._wordvars[_LASTHEARTRATE]))
             except Exception as e:
                 wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":"Exception","body":"Can't write heart log: "+str(e)})
-                print("HeartSaveExcep:"+str(e))
+                print("HSE:"+str(e))
 
         gc.collect()
 
@@ -703,7 +703,7 @@ class MonolithApp():
                         else:
                             field += char
             except Exception as e:
-                print("StepLoadExcep:"+str(e))
+                print("SLE:"+str(e))
                 pass
             subj = "Reload"
             bdy = "Reloaded.\n"
@@ -720,7 +720,7 @@ class MonolithApp():
                  bdy += "Written {} missed blocks to catch-up log\n".format(diff)
             wasp.system.notify(wasp.watch.rtc.get_uptime_ms(),{"title":subj,"body":bdy})
         except Exception as e:
-            print("StepLoadExcep2:"+str(e))
+            print("SLE2:"+str(e))
     
     
 
@@ -744,7 +744,7 @@ class MonolithApp():
                     field += char
         self._updatefont(self._wordvars[_FONTNUM])
       except Exception as e:
-        print("PrefLoadExcep:"+str(e))
+        print("PLE:"+str(e))
         pass
 
 
