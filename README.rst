@@ -306,3 +306,29 @@ Other apps: (The "blank" white screenshot is a flashlight app)
    :alt: Weather application running in the wasp-os simulator
    :width: 179
 
+Fonts for the Monolith face:
+
+.. image:: res/screenshots/AntraxFontApp.png
+   :alt: A antrax looking font
+   :width: 179
+
+.. image:: res/screenshots/BubbleFontApp.png
+   :alt: A bubble looking font
+   :width: 179
+
+.. image:: res/screenshots/DigiFontApp.png
+   :alt: A seven segment display looking font
+   :width: 179
+
+.. image:: res/screenshots/MetalFontApp.png
+   :alt: A Metal looking font
+   :width: 179
+
+.. image:: res/screenshots/ScifiFontApp.png
+   :alt: A Sci-Fi looking font
+   :width: 179
+
+.. image:: res/screenshots/SpaceFontApp.png
+   :alt: A Sci-Fi looking font
+   :width: 179
+

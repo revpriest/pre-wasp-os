@@ -17,6 +17,8 @@ Watch faces
 
 .. automodule:: dual_clock
 
+.. automodule:: monolith
+
 .. automodule:: fibonacci_clock
 
 .. automodule:: week_clock
@@ -24,6 +26,7 @@ Watch faces
 .. automodule:: word_clock
 
 .. automodule:: resistor_clock
+
 
 Built-in
 --------
@@ -91,3 +94,19 @@ Games
 .. automodule:: snake
 
 .. automodule:: four_in_a_row
+
+Fonts for Monolith face
+-----
+
+.. automodule:: antrax_font
+
+.. automodule:: digi_font
+
+.. automodule:: scifi_font
+
+.. automodule:: bubble_font
+
+.. automodule:: metal_font
+
+.. automodule:: space_font
+

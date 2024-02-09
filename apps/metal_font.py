@@ -1,4 +1,13 @@
+""" Metal font
+~~~~~~~~~~~~~
+
+A font for monolith face
+
+.. figure:: res/screenshots/MetalFontApp.png
+    :width: 179
+"""
 import wasp
+
 
 METALFONT_DIGITS = (
 # 1-bit RLE, 45x45, generated from res/metalfont/metal_0.png, 123 bytes
@@ -118,9 +127,9 @@ METALFONT_DIGITS = (
 )
 )
 
-
 class MetalFontApp():
-    """Metalfont"""
+    """ Metal font """
+
     NAME = "Metal"
     ICON = METALFONT_DIGITS[5]
 
