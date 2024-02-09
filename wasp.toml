@@ -14,19 +14,19 @@ file = 'apps/space_font.py'
 auto_load = true
 
 [[app]]
-file = 'apps/antrax_font.py'
+file = 'apps/scifi_font.py'
 
 [[app]]
 file = 'apps/metal_font.py'
+
+#[[app]]
+#file = 'apps/antrax_font.py'
 
 #[[app]]
 #file = 'apps/bubble_font.py'
 
 #[[app]]
 #file = 'apps/digi_font.py'
-
-#[[app]]
-#file = 'apps/scifi_font.py'
 
 #[[app]]
 #file = 'apps/snake.py'
@@ -39,10 +39,6 @@ file = 'apps/metal_font.py'
 
 #[[app]] # If only one watch face is included this app can be removed
 #file = 'apps/faces.py'
-#auto_load = true
-
-#[[app]]
-#file = 'apps/metal_font.py'
 #auto_load = true
 
 #[[app]] # If only one watch face is included this app can be removed
