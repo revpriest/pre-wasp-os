@@ -395,6 +395,10 @@ Other apps: (The "blank" white screenshot is a flashlight app)
    :alt: Weather application running in the wasp-os simulator
    :width: 179
 
+.. image:: res/screenshots/MilestoneApp.png
+   :alt: The Milestone app shows when we last ate or drank
+   :width: 179
+
 Fonts for the Monolith face:
 
 .. image:: res/screenshots/AntraxFontApp.png
@@ -420,4 +424,3 @@ Fonts for the Monolith face:
 .. image:: res/screenshots/SpaceFontApp.png
    :alt: A Sci-Fi looking font
    :width: 179
-

@@ -82,6 +82,8 @@ Applications
 
 .. automodule:: weather
 
+.. automodule:: milestone
+
 Games
 -----
 
