@@ -16,8 +16,8 @@ auto_load = true
 [[app]]
 file = 'apps/scifi_font.py'
 
-#[[app]]
-#file = 'apps/metal_font.py'
+[[app]]
+file = 'apps/metal_font.py'
 
 #[[app]]
 #file = 'apps/antrax_font.py'
