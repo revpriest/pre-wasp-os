@@ -79,6 +79,8 @@ Applications
 
 .. automodule:: weather
 
+.. automodule:: mood
+
 Games
 -----
 
