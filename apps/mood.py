@@ -70,30 +70,6 @@ class MoodApp():
         wasp.mood_draw = self._draw_mood_face
         wasp.mood_logrotate = self._logrotate
         self._cacheentry = _blankentry
-
-    def unregister(self):
-        del(wasp.mood_draw)
-        del(wasp.mood_logrotate)
-
-    def background(self):
-        try:
-            del(self._showdaydiff)
-            del(self._filediff)
-            del(self._activities)
-            del(self._filediff)
-            del(self._currentact)
-            del(self._topid)
-            del(self._showdaydiff)
-            del(self._editingface)
-            del(self._startedit)
-            del(self._lastlogrotate)
-        except:
-            pass
-
-    def wake(self):
-        pass
-
-    def foreground(self):
         self._filediff    = ""
         self._currentact = 0
         self._topid = 0
@@ -106,6 +82,18 @@ class MoodApp():
         self._reset()
         self._update()
         self._load_acts()
+
+    def unregister(self):
+        del(wasp.mood_draw)
+        del(wasp.mood_logrotate)
+
+    def background(self):
+        pass
+
+    def wake(self):
+        pass
+
+    def foreground(self):
         wasp.system.bar.clock = True
         wasp.system.request_event(wasp.EventMask.TOUCH)
         wasp.system.request_event(wasp.EventMask.TOUCH | wasp.EventMask.SWIPE_UPDOWN| wasp.EventMask.SWIPE_LEFTRIGHT)
