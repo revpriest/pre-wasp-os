@@ -68,12 +68,11 @@ class Monographer(QMainWindow):
 
         # Year selection
         self.year_dropdown = QComboBox()
-        log_dirs = [d for d in os.listdir('./logs/') if os.path.isdir(os.path.join('./logs/', d))]
-        sorted_log_dirs = sorted(log_dirs, reverse=True)
+        log_dirs = [d for d in os.listdir('./logs/') if os.path.isdir(os.path.join('./logs/', d)) and d.isdigit()]
+        sorted_log_dirs = sorted(log_dirs, key=int, reverse=True)
         self.year_dropdown.addItems(sorted_log_dirs)
         toolbar.addWidget(self.year_dropdown)
         self.year_dropdown.currentIndexChanged.connect(self.on_year_changed)
-
 
         # Connect/Disconnect button
         self.connect_button = QPushButton("Connect")
