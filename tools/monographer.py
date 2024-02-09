@@ -26,7 +26,7 @@ from matplotlib.lines import Line2D
 
 
 class Monographer(QMainWindow):
-    categories = ["mood","steps","heart"]
+    categories = ["mood","steps","heart","mile"]
     theme = {
         'bg': (0.1,0.1,0.1),
         'bggraph': (0.16,0.15,0.16),
@@ -41,11 +41,22 @@ class Monographer(QMainWindow):
         """ Build the UI """
         super().__init__()
         self.graphdata = {}
+        self.milecats = []
         try:
             with open("monographer_settings.json", "r") as file:
                 settings = json.load(file)
                 if('catcols' in settings):
                     self.catcols = settings['catcols']
+        except:
+            pass
+
+        try:
+            mile_names = os.listdir("./logs/mile")
+            for n in mile_names:
+                if(n.endswith(".csv")):
+                    if(n!="index.csv"):
+                        self.milecats.append(n[0:-4])
+    
         except:
             pass
         self.setWindowTitle("Monographer")
@@ -350,7 +361,25 @@ class Monographer(QMainWindow):
                         for ii in range(0,len(data[xvals[0]])):
                             yvals = [data[ts][ii] for ts in data.keys()]
                             c = self.strtocol(mode)
-                            if(mode=="mood"):
+                            if(mode=="mile"):           #milestones are just icons or markers
+                                for ts in xvals:
+                                    thename = data[ts][0]
+                                    thecat = data[ts][1]
+                                    if(not thecat in self.milecats):
+                                        thename = data[ts][1]
+                                        thecat = data[ts][0]
+                                    thecati = self.milecats.index(thecat)
+                                    c =self.strtocol(thename)
+                                    col = ((((c >> 16) & 0xFF)/255), (((c >>  8) & 0xFF)/255),  (((c      ) & 0xFF)/255))
+                                    legcols[thename]=(2,c)
+                                    rect = patches.Rectangle((ts, 1.1 + thecati*0.05), 0.005, 0.05, facecolor=col, linewidth=1, edgecolor='black', zorder=8)
+                                    self.ax2.add_patch(rect)
+
+
+                                    self.ax2.annotate(thename, (ts+0.005, 1.1+thecati*0.05), color='white', fontsize=10, ha='left', va='bottom',zorder=7)
+
+                                
+                            elif(mode=="mood"):
                                 if(ii == 1):            #Awake determines block height, category determines color.
                                     prior = [int(xvals[0]),0]
                                     for ts in xvals:
@@ -381,6 +410,8 @@ class Monographer(QMainWindow):
             col = ((((c >> 16) & 0xFF)/255), (((c >>  8) & 0xFF)/255), (((c      ) & 0xFF)/255))
             if(legcols[i][0]==0):
                 patch = Line2D([0],[0],color=col,label=i)
+            if(legcols[i][0]==2):
+                patch = Line2D([0],[0],color=col,label=i,linewidth=4)
             else:
                 patch = patches.Patch(color=col,label=i)
             legs.append(patch)
@@ -389,6 +420,7 @@ class Monographer(QMainWindow):
             l.set_picker(5)
         for l in leg.get_lines():
             l.set_picker(5)
+        self.ax2.set_ylim(-0.1,1.4)
         self.canvas.draw()
 
 
@@ -397,6 +429,26 @@ class Monographer(QMainWindow):
     def cleantopic(self,topic):
         """ Just clean up the name stripping the punctuation and excess spaces etc. """
         return topic.replace(".","").strip()
+
+
+    def loadmiles(self,logdir):
+        """ Add a directory full of milestone events to the graph_data """
+        if(not "mile" in self.graphdata):
+            self.graphdata['mile'] = {}
+        files = os.listdir(logdir)
+        for f in files:
+            n = f[0:-8]
+            if(n!="index"):
+                print("Loading file "+n)
+                with open(logdir+"/"+f, 'r') as file:
+                    stamps = file.read().strip().split("\n")
+                    for s in stamps:
+                        ts = self.parsedate(s)
+                        if(not ts in self.graphdata['mile']):
+                            self.graphdata['mile'][ts] = []
+                        self.graphdata['mile'][ts].append(n)
+              
+                
 
 
     def update_selected_files(self, mode, list_view, text_edit):
@@ -410,11 +462,16 @@ class Monographer(QMainWindow):
         contents = ''
         self.graphdata[mode] = {}
         for file in files:
-            with open(file, 'r') as f:
-                contents += f.read()
-                if(mode=="steps"):
-                    contents+="\n"
-                self.append_graph_data(mode,contents,file)
+            if(mode=="mile"):
+                self.loadmiles(file)
+            else:
+                with open(file, 'r') as f:
+                    contents += f.read()
+                    if(mode=="steps"):
+                        contents+="\n"
+                    self.append_graph_data(mode,contents,file)
+
+        print("Graph data for miles:"+str(self.graphdata['mile']))
 
         # Update the text edit
         text_edit.setLineWrapMode(QTextEdit.NoWrap)  # Disable word wrapping
@@ -461,7 +518,12 @@ class Monographer(QMainWindow):
     def parsedate(self,dstring):
         if((dstring==None)or(dstring=="")):
             return 0
-        date_format = "%Y-%m-%d %H:%M" if " " in dstring else "%Y-%m-%d"
+        date_format = "%Y-%m-%d"
+        c=dstring.count(":")
+        if(c==1):
+          date_format = "%Y-%m-%d %H:%M"
+        if(c==2):
+          date_format = "%Y-%m-%d %H:%M:%S"
         dt = datetime.strptime(dstring, date_format)
         date_num = mdates.date2num(dt)
         return date_num
@@ -639,13 +701,45 @@ class SyncThread(QThread):
     def run(self):
         year = int(self.main.year_dropdown.currentText())
         for mode in self.main.categories:
-            res = self.main.remote_execute("cd('/flash/logs/{:04d}/{}/')".format(year,mode)).strip()
+            if(mode=="mile"):
+                self.sync_milestone(year)
+            else:
+                res = self.main.remote_execute("cd('/flash/logs/{:04d}/{}/')".format(year,mode)).strip()
+                time.sleep(1.1)
+                res = self.main.remote_execute("ls").strip()
+                self.diff_files(year,mode,res)
+                time.sleep(1.1)
+                res = self.main.remote_execute("collect()").strip()
+                time.sleep(1.1)
+
+
+    def sync_milestone(self,year):
+            try:
+                os.mkdir("./logs/{:04d}/mile".format(year))
+            except:
+                pass
+            print("Checking milestones")
+            res = self.main.remote_execute("cd('/flash/logs/{:04d}/mile/')".format(year)).strip()
             time.sleep(1.1)
-            res = self.main.remote_execute("ls").strip()
-            self.diff_files(year,mode,res)
-            time.sleep(1.1)
-            res = self.main.remote_execute("collect()").strip()
-            time.sleep(1.1)
+            files = self.main.remote_execute("ls").strip().split("\n")
+            for l in files:
+                fields = l.strip().split()
+                if(len(fields)>1):
+                    fn = "./logs/{:04d}/mile/{}".format(year,fields[1])
+                    if(not os.path.exists(fn)):
+                        print("Doing "+fn)
+                        os.mkdir(fn)
+                        mfiles = self.main.remote_execute("ls ('"+fields[1]+"')").strip().split("\n")
+                        for ll in mfiles:
+                            lf = ll.strip().split()
+                            cmd = "cat(\""+fields[1]+"/"+lf[1]+"\")"
+                            print("Getting "+cmd)
+                            bunchoflines = self.main.remote_execute(cmd)
+                            bunchoflines = bunchoflines.replace('\r', '').strip()
+                            with open("./logs/{:04d}/mile/{}/{}".format(year,fields[1],lf[1]), 'w') as f:
+                                f.write(bunchoflines)
+                            time.sleep(0.5)
+                            res = self.main.remote_execute("collect()").strip()
 
 
     def diff_files(self,year,mode,bunchoflines):
