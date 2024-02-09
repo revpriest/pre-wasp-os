@@ -17,6 +17,14 @@ auto_load = true
 #file = 'apps/digi_font.py'
 #auto_load = true
 
+#[[app]]
+#file = 'apps/metal_font.py'
+#auto_load = true
+
+[[app]]
+file = 'apps/antrax_font.py'
+auto_load = true
+
 [[app]]
 file = 'apps/stopwatch.py'
 quick_ring = true
