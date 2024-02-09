@@ -1,6 +1,15 @@
+""" Space font
+~~~~~~~~~~~~~
+
+A font for monolith face
+
+.. figure:: res/screenshots/SpaceFontApp.png
+    :width: 179
+"""
 import wasp
 
 #https://www.dafont.com/spaceport-one.font - 100% free
+
 SPACEFONT_DIGITS = (
 # 1-bit RLE, 45x45, generated from res/spaceportfont/spacefont_0.png, 137 bytes
 (
@@ -126,8 +135,9 @@ SPACEFONT_DIGITS = (
 )
 )
 
+
+
 class SpaceFontApp():
-    """Spacefont"""
     NAME = "Space"
     ICON = SPACEFONT_DIGITS[2]
 
@@ -157,5 +167,4 @@ class SpaceFontApp():
         draw.blit(SPACEFONT_DIGITS[7],   90, 125)
         draw.blit(SPACEFONT_DIGITS[8],  135, 125)
         draw.blit(SPACEFONT_DIGITS[9],  180, 125)
-
 

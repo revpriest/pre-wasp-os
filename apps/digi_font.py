@@ -1,6 +1,14 @@
+""" Digi font
+~~~~~~~~~~~~~
+
+A font for monolith face
+
+.. figure:: res/screenshots/DigiFontApp.png
+    :width: 179
+"""
 import wasp
 
-# https://www.dafont.com/alarm-clock.font - 100% free
+
 DIGIFONT_DIGITS = (
 (
     45, 45,
@@ -130,8 +138,9 @@ DIGIFONT_DIGITS = (
 )
 
 
+# https://www.dafont.com/alarm-clock.font - 100% free
 class DigiFontApp():
-    """Digifont"""
+    """ Digi font """
     NAME = "Digi"
     ICON = DIGIFONT_DIGITS[4]
 
@@ -161,5 +170,6 @@ class DigiFontApp():
         draw.blit(DIGIFONT_DIGITS[7],   90, 125)
         draw.blit(DIGIFONT_DIGITS[8],  135, 125)
         draw.blit(DIGIFONT_DIGITS[9],  180, 125)
+
 
 

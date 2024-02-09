@@ -1,3 +1,11 @@
+""" Antrax font
+~~~~~~~~~~~~~
+
+A font for monolith face
+
+.. figure:: res/screenshots/AntraxFontApp.png
+    :width: 179
+"""
 import wasp
 
 # https://www.dafont.com/antraxja-goth-1938.font
@@ -140,7 +148,7 @@ ANTRAXFONT_DIGITS = (
 
 
 class AntraxFontApp():
-    """Antraxfont"""
+    """ Antrax font """
     NAME = "Antrax"
     ICON = ANTRAXFONT_DIGITS[6]
 

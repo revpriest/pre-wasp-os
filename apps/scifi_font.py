@@ -1,6 +1,12 @@
-import wasp
+""" SciFi font
+~~~~~~~~~~~~~
 
-# https://www.dafont.com/neo-sci-fi-v2-0.font - 100% free
+A font for monolith face
+
+.. figure:: res/screenshots/ScifiFontApp.png
+    :width: 179
+"""
+import wasp
 SCIFIFONT_DIGITS = (
 (
     45, 45,
@@ -117,8 +123,11 @@ SCIFIFONT_DIGITS = (
 )
 
 
+# https://www.dafont.com/neo-sci-fi-v2-0.font - 100% free
+
 class ScifiFontApp():
-    """Scififont"""
+    """ SciFi font """
+
     NAME = "Scifi"
     ICON = SCIFIFONT_DIGITS[3]
 

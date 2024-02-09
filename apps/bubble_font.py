@@ -1,3 +1,11 @@
+""" Bubble font
+~~~~~~~~~~~~~
+
+A font for monolith face
+
+.. figure:: res/screenshots/BubbleFontApp.png
+    :width: 179
+"""
 import wasp
 
 BUBBLEFONT_DIGITS = (
@@ -118,7 +126,7 @@ BUBBLEFONT_DIGITS = (
 
 
 class BubbleFontApp():
-    """Bubblefont"""
+    """ Bubble font """
     NAME = "Bubble"
     ICON = BUBBLEFONT_DIGITS[1]
 
