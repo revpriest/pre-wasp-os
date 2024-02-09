@@ -237,6 +237,9 @@ class MonolithApp():
             if((self._now[5]==0)and((self._now[4]%self._wordvars[_STEPLOGFREQ])==0)):
                 self._writesteplog()
 
+        #Clean up. Surely this ought to happen at least every second but seems not?
+        gc.collect()
+
     ##
     # Step counter
     ##
