@@ -57,11 +57,7 @@ file = 'watch_faces/clock.py'
 
 [[watchface]] # Requires ClockApp to also be installed
 file = 'watch_faces/week_clock.py'
-
-
-[[watchface]]
-file = 'watch_faces/monolith.py'
 default = true
 
-#[[watchface]]
-#file = 'watch_faces/chrono.py'
+[[watchface]]
+file = 'watch_faces/chrono.py'
