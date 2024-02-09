@@ -78,10 +78,10 @@ class MoodApp():
         self._startedit = (0.5,0.5)
         self._lastlogrotate = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
         self._cacheprior = _blankentry
+        self._load_acts()
         self._load()
         self._reset()
         self._update()
-        self._load_acts()
 
     def unregister(self):
         del(wasp.mood_draw)
@@ -373,10 +373,10 @@ class MoodApp():
               file.seek(length-64,0)
               dataLine = str(file.read(64))
               self._cacheprior = self._parse_data_line(dataLine)
-        except Exception as e:
+        except Exception as ex:
             self._cacheprior = self._cacheentry = _blankentry
             self._topid = self._viewid = 0
-            print("MoodLoadExcep"+str(e))
+            print("MoodLoadExcep"+str(ex))
         gc.collect()
 
     #Load a particular entry
@@ -520,8 +520,9 @@ class MoodApp():
         ts = int(time.mktime((int(dataline[0:4]),int(dataline[5:7]),int(dataline[8:10]), int(dataline[11:13]),int(dataline[14:16]),0,1,0,0)))
         e = int(float(dataline[17:21])*1000) + (int(float(dataline[22:26])*1000)<<16)
         try:
-            c = self._activites.index(dataline[27:62].strip())
-        except:
+            c = self._activities.index(dataline[27:62].strip())
+        except Exception as ex:
+            print("Exept:"+str(ex))
             c=0
         return(array.array("L",[ts,e,c]))
 
