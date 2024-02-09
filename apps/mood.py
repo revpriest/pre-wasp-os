@@ -41,7 +41,7 @@ COLS = array.array("H",[ 0xc000,0x0620,0x0018,0xc620,0x0638,0xc018,0xc638,
 _newcol      = const(0x366e)
 _edittimecol = const(0xa986)
 _editcol     = const(0xee85)
-_blankentry  = [(0,0,0,0,0,0),(0,0),""]
+_blankentry  = array.array("L",[0,0,0])
 
 class MoodApp():
     NAME = "Mood"
@@ -131,7 +131,8 @@ class MoodApp():
         self._cacheentry   =self._clone_entry(self._cacheprior)
         self._editingface = None
         if(self._cacheentry!=None):
-            self._cacheentry[0]=self._get_rounded_now()
+            n = self._get_rounded_now_ts()
+            self._cacheentry[0]=int(n)
         self._viewid = self._topid+1
 
 
@@ -144,7 +145,9 @@ class MoodApp():
           if(x<105):
             if(self._editingface==None):
                 self._editingface = 1
-                self._startedit = (self._cacheentry[1][0],self._cacheentry[1][1])
+                h = self._cacheentry[1] & 0xffff
+                a = (self._cacheentry[1] >> 16) & 0xffff
+                self._startedit = (h/1000,a/1000)
             else:
                 self._editingface=None
           if(x>139):
@@ -160,15 +163,15 @@ class MoodApp():
           self._undobut()
         elif(y>=192):
           if(x<40):
-            self._cacheentry[0] = self._delta_now(self._cacheentry[0],-60*60)
+            self._cacheentry[0]-= 60*60
           elif(x<80):
-            self._cacheentry[0] = self._delta_now(self._cacheentry[0],-60*5)
+            self._cacheentry[0]-= 60*5
           elif(x>200):
-            self._cacheentry[0] = self._delta_now(self._cacheentry[0],+60*60)
+            self._cacheentry[0]+= 60*60
           elif(x>160):
-            self._cacheentry[0] = self._delta_now(self._cacheentry[0],+60*5)
+            self._cacheentry[0]+= 60*5
           else:
-            self._cacheentry[0] = self._get_rounded_now()
+            self._cacheentry[0] = int(self._get_rounded_now_ts())
           self._draw_time_period()
 
     #What to do if someone strokes us
@@ -199,7 +202,9 @@ class MoodApp():
         if(self._cacheentry==None):
           self._draw_mood_face(32,34,0.5,0.5)
         else:
-          self._draw_mood_face(32,34,self._cacheentry[1][0],self._cacheentry[1][1])
+          h = self._cacheentry[1] & 0xffff
+          a = (self._cacheentry[1] >> 16) & 0xffff
+          self._draw_mood_face(32,34,h/1000,a/1000)
         self._draw_act_selector()
         self._draw_time_period()
         self._draw_save_button()
@@ -234,8 +239,8 @@ class MoodApp():
                 if(y>1):y=1
                 if(x<0):x=0
                 if(x>1):x=1
-                self._cacheentry[1] = (y,x)
-                self._draw_mood_face(32,34,self._cacheentry[1][0],self._cacheentry[1][1])
+                self._cacheentry[1] = int((int(y*1000) << 16) + int(x*1000))
+                self._draw_mood_face(32,34,y,x)
                 wasp.system.keep_awake()
 
     #Nothing here really changes without user-input so we do the updates on input instead.
@@ -250,12 +255,14 @@ class MoodApp():
         else:
           draw.set_color(_editcol)
         if(self._cacheprior!=None):
+            cp = time.localtime(self._cacheprior[0])
             draw.string("{:04d}-{:02d}-{:02d}".format(
-                    self._cacheprior[0][0],self._cacheprior[0][1],self._cacheprior[0][2]), 2, 144,235)
+                    cp[0],cp[1],cp[2]), 2, 144,235)
             draw.string("From {:02d}:{:02d} to".format(
-                    self._cacheprior[0][3],self._cacheprior[0][4]), 2, 176,235)
+                    cp[3],cp[4]), 2, 176,235)
             draw.set_color(_edittimecol)
-            draw.string("{:02d}:{:02d}".format(self._cacheentry[0][3],self._cacheentry[0][4]), 80, 208,80)
+            cp = time.localtime(self._cacheentry[0])
+            draw.string("{:02d}:{:02d}".format(cp[3],cp[4]), 80, 208,80)
 
     def _draw_save_button(self):
         draw = wasp.watch.drawable
@@ -281,12 +288,12 @@ class MoodApp():
           if((not hasattr(self,"_cacheentry")) or (self._cacheentry==None)):
             happy=0.5
           else:
-            happy = self._cacheentry[1][0]
+            happy = (self._cacheentry[1] & 0xffff)/1000
         if(awake==None):
           if((not hasattr(self,"_cacheentry")) or (self._cacheentry==None)):
             awake=0.5
           else:
-            awake = self._cacheentry[1][1]
+            awake = ((self._cacheentry[1] >> 16)&0xffff)/1000
 
         #If it's unchanged no need to redraw
         if(unlessCombo!=None):
@@ -334,7 +341,7 @@ class MoodApp():
         draw.string("+" ,160, 208, 34)
 
         try:
-            i = self._activities.index(self._cacheentry[2].strip())
+            i = self._cacheentry[2]
             col = COLS[i % len(COLS)]
             draw.set_color(0,col)
         except Exception as e:
@@ -346,13 +353,13 @@ class MoodApp():
         if(self._cacheentry==None):
             actstring = ""
         else:
-            actstring = self._cacheentry[2].strip()
+            actstring = self._activities[self._cacheentry[2]].strip()
         draw.string(actstring,40 , 112, 160)
 
 
 
     #Current time to within 5 minutes
-    def _get_rounded_now(self,rounded=5):
+    def _get_rounded_now_ts(self,rounded=5):
         rounded*=60
         ts = time.mktime(wasp.watch.rtc.get_localtime()+(0,))
         if(rounded!=0):
@@ -360,6 +367,10 @@ class MoodApp():
           if(r>rounded/2):
             r-=rounded
           ts = ts - r
+        return ts
+
+    def _get_rounded_now(self,rounded=5):
+        ts = self._get_rounded_now_ts
         lt = time.localtime(ts)
         return lt
 
@@ -404,13 +415,10 @@ class MoodApp():
 
     #Clone a entry - otherwise we end up editing both last/cache at once
     def _clone_entry(self,entry):
-        gc.collect()
         if(entry==None):
           return None
-        if(len(entry[0])<5): return[(0,0,0,0,0),(0,0),""]
-        return [(entry[0][0],entry[0][1],entry[0][2],entry[0][3],entry[0][4]),
-                (entry[1][0],entry[1][1]),
-                entry[2]];
+        gc.collect()
+        return array.array("L",[entry[0],entry[1],entry[2]])
 
     #When the undo button is hit
     def _undobut(self):
@@ -521,22 +529,31 @@ class MoodApp():
 
     #Parse a line from the 64-byte-wide special CSV into an entry
     def _parse_data_line(self, dataline):
-        return([
-         (int(dataline[0:4]),int(dataline[5:7]),int(dataline[8:10]),
-          int(dataline[11:13]),int(dataline[14:16]),0,1,0,0),
-        (float(dataline[17:21]),float(dataline[22:26])),
-        dataline[27:62].strip()])
+        print("parsing "+dataline)
+        ts = int(time.mktime((int(dataline[0:4]),int(dataline[5:7]),int(dataline[8:10]), int(dataline[11:13]),int(dataline[14:16]),0,1,0,0)))
+        print("Got TS "+str(ts))
+        e = int(float(dataline[17:21])*1000) + (int(float(dataline[22:26])*1000)<<16)
+        try:
+            c = self._activites.index(dataline[27:62].strip())
+        except:
+            c=0
+        print("Got C "+str(c))
+        print("Parsed "+dataline+" to "+str(ts)+","+str(e)+","+str(c))
+        return(array.array("L",[ts,e,c]))
 
 
     #Convert an entry in to 64-byte wide CSV row 
     def _entry_to_string(self,entry):
-        padtopic = entry[2][:35]
+        padtopic = self._activities[entry[2]][:35]
         while(len(padtopic)<35):
           padtopic+=" "
+        lt = time.localtime(entry[0])
+        h = entry[1] & 0xffff
+        a = (entry[1] >> 16) & 0xffff
         line = "{:04d}-{:02d}-{:02d} {:02d}:{:02d},{:0.2f},{:0.2f},{}.\n".format(
-                    entry[0][0],entry[0][1],entry[0][2],
-                    entry[0][3],entry[0][4],
-                    entry[1][0],entry[1][1],
+                    lt[0],lt[1],lt[2],
+                    lt[3],lt[4],
+                    h/1000,a/1000,
                     padtopic);
         return line
        
@@ -549,8 +566,8 @@ class MoodApp():
             if(self._currentact<0):
               self._currentact=len(self._activities)-1
             if(self._cacheentry==None):
-              self._cacheentry = [self._get_rounded_now(5),(0.5,0.5),""]
-            self._cacheentry[2] = self._activities[self._currentact]
+              self._cacheentry = self._blankentry
+            self._cacheentry[2] = self._currentact
 
 
 
