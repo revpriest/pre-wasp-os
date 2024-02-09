@@ -529,16 +529,12 @@ class MoodApp():
 
     #Parse a line from the 64-byte-wide special CSV into an entry
     def _parse_data_line(self, dataline):
-        print("parsing "+dataline)
         ts = int(time.mktime((int(dataline[0:4]),int(dataline[5:7]),int(dataline[8:10]), int(dataline[11:13]),int(dataline[14:16]),0,1,0,0)))
-        print("Got TS "+str(ts))
         e = int(float(dataline[17:21])*1000) + (int(float(dataline[22:26])*1000)<<16)
         try:
             c = self._activites.index(dataline[27:62].strip())
         except:
             c=0
-        print("Got C "+str(c))
-        print("Parsed "+dataline+" to "+str(ts)+","+str(e)+","+str(c))
         return(array.array("L",[ts,e,c]))
 
 
