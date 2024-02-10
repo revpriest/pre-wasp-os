@@ -22,8 +22,8 @@ file = 'apps/metal_font.py'
 #[[app]]
 #file = 'apps/antrax_font.py'
 
-#[[app]]
-#file = 'apps/bubble_font.py'
+[[app]]
+file = 'apps/bubble_font.py'
 
 [[app]]
 file = 'apps/digi_font.py'
@@ -34,8 +34,8 @@ file = 'apps/snake.py'
 [[app]]
 file = 'apps/heart.py'
 
-#[[app]]
-#file = 'apps/calculator.py'
+[[app]]
+file = 'apps/calculator.py'
 
 #[[app]] # If only one watch face is included this app can be removed
 #file = 'apps/faces.py'
