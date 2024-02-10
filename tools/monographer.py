@@ -105,8 +105,8 @@ class Monographer(QMainWindow):
         self.save_but.clicked.connect(self.save_button)
         toolbar.addWidget(self.save_but)
 
-        # Add a activites button to the toolbar
-        self.act_but = QPushButton("Acitivites")
+        # Add a activities button to the toolbar
+        self.act_but = QPushButton("Activities")
         self.act_but.clicked.connect(self.activities_button)
         toolbar.addWidget(self.act_but)
 
@@ -372,11 +372,11 @@ class Monographer(QMainWindow):
                                     c =self.strtocol(thename)
                                     col = ((((c >> 16) & 0xFF)/255), (((c >>  8) & 0xFF)/255),  (((c      ) & 0xFF)/255))
                                     legcols[thename]=(2,c)
-                                    rect = patches.Rectangle((ts, 1.1 + thecati*0.05), 0.005, 0.05, facecolor=col, linewidth=1, edgecolor='black', zorder=8)
+                                    rect = patches.Rectangle((ts, 1.1 + thecati*0.05), 0.005, 0.05, facecolor=col, linewidth=0, edgecolor='black', zorder=8)
                                     self.ax2.add_patch(rect)
 
 
-                                    self.ax2.annotate(thename, (ts+0.005, 1.1+thecati*0.05), color='white', fontsize=10, ha='left', va='bottom',zorder=7)
+                                    #self.ax2.annotate(thename, (ts+0.005, 1.1+thecati*0.05), color='white', fontsize=10, ha='left', va='bottom',zorder=7)
 
                                 
                             elif(mode=="mood"):
@@ -732,12 +732,13 @@ class SyncThread(QThread):
                         mfiles = self.main.remote_execute("ls ('"+fields[1]+"')").strip().split("\n")
                         for ll in mfiles:
                             lf = ll.strip().split()
-                            cmd = "cat(\""+fields[1]+"/"+lf[1]+"\")"
-                            print("Getting "+cmd)
-                            bunchoflines = self.main.remote_execute(cmd)
-                            bunchoflines = bunchoflines.replace('\r', '').strip()
-                            with open("./logs/{:04d}/mile/{}/{}".format(year,fields[1],lf[1]), 'w') as f:
-                                f.write(bunchoflines)
+                            if(len(lf)>1):
+                                cmd = "cat(\""+fields[1]+"/"+lf[1]+"\")"
+                                print("Getting "+cmd)
+                                bunchoflines = self.main.remote_execute(cmd)
+                                bunchoflines = bunchoflines.replace('\r', '').strip()
+                                with open("./logs/{:04d}/mile/{}/{}".format(year,fields[1],lf[1]), 'w') as f:
+                                    f.write(bunchoflines)
                             time.sleep(0.5)
                             res = self.main.remote_execute("collect()").strip()
 
