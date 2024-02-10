@@ -357,7 +357,7 @@ class MoodApp():
         return ts
 
     def _get_rounded_now(self,rounded=5):
-        ts = self._get_rounded_now_ts
+        ts = self._get_rounded_now_ts()
         lt = time.localtime(ts)
         return lt
 
