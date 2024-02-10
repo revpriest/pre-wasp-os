@@ -25,14 +25,14 @@ file = 'apps/metal_font.py'
 #[[app]]
 #file = 'apps/bubble_font.py'
 
-#[[app]]
-#file = 'apps/digi_font.py'
+[[app]]
+file = 'apps/digi_font.py'
 
-#[[app]]
-#file = 'apps/snake.py'
+[[app]]
+file = 'apps/snake.py'
 
-#[[app]]
-#file = 'apps/heart.py'
+[[app]]
+file = 'apps/heart.py'
 
 #[[app]]
 #file = 'apps/calculator.py'
