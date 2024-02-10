@@ -133,7 +133,7 @@ class MilestoneApp():
             self._fullpath.append((fname,xcol))
             if(self._data==0):
                 #No more buttons, we hit the leaf
-                return self._addtimestamps()
+                return self._drawstamplog()
             else:
                 if(len(self._data)>4):
                     draw.fill(fgcol, 0, 220, 240, 5)
@@ -205,6 +205,8 @@ class MilestoneApp():
 
     #Our screen is touched at an index number
     def _touched(self,idx):
+        if(self._data==0):
+            return(self._drawstamplog(addone=True))
         self._cornerfills(idx)
         if(hasattr(self,"_data")):
             if(len(self._data)>idx):
@@ -329,7 +331,7 @@ class MilestoneApp():
         return self._data
 
 
-    def _addtimestamps(self):
+    def _drawstamplog(self,addone=False):
         wasp.watch.drawable.fill(0x0000, 0, 32, 240, 208)
         wasp.watch.drawable.set_font(fonts.sans24)
         y=37
@@ -338,7 +340,8 @@ class MilestoneApp():
         lastf=None
         for fn in self._fullpath:
             gc.collect()
-            self._savemilepassed(fn[0],tstr)
+            if(addone):
+                self._savemilepassed(fn[0],tstr)
             if(fn[0]!="index"):
                 if(y<190): 
                    wasp.watch.drawable.set_color(0xffff, fn[1])
@@ -346,17 +349,35 @@ class MilestoneApp():
                 y+=25
             lastf=fn[0]
         wasp.watch.drawable.set_color(0xffff, 0)
-        if(y<196):
-            y=196
 
-        if(y<197): 
-            cnt = self._loadts(lastf)
-            wasp.watch.drawable.string(str(cnt[0]),0, y, width=240, right=True)
-            y+=25
-        wasp.watch.drawable.set_font(fonts.sans18)
-        if(y<222): 
-           wasp.watch.drawable.string(tstr.strip(),0, y, width=240, right=True)
-           y+=18
+        tfname = self._fullname(lastf,"l")
+        cnt=0
+        try:
+            with open(tfname, 'r') as file:
+                file.seek(0, 2)       #0 bytes from end
+                length = file.tell()
+                cnt = int(length/20)
+
+                top = 214 - cnt * 18
+                if(y<top):
+                    y=top
+
+                if(y<197): 
+                    wasp.watch.drawable.string(str(cnt),0, y, width=240, right=True)
+                    y+=25
+                wasp.watch.drawable.set_font(fonts.sans18)
+                n=1
+                while((y<222)and(cnt>=0)): 
+                   file.seek(length-n*20, 0)
+                   t = file.read(20).strip()
+                   wasp.watch.drawable.string(t,0, y, width=240, right=True)
+                   y+=18
+                   n+=1
+        except:
+            pass
+        if(cnt==0):
+            wasp.watch.drawable.string("0",0, 215, width=240, right=True)
+        
             
        
     def _nowstr(self):
