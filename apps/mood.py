@@ -226,7 +226,7 @@ class MoodApp():
                 if(y>1):y=1
                 if(x<0):x=0
                 if(x>1):x=1
-                self._cacheentry[1] = int((int(y*1000) << 16) + int(x*1000))
+                self._cacheentry[1] = int((int(x*1000) << 16) + int(y*1000))
                 self._draw_mood_face(32,34,y,x)
                 wasp.system.keep_awake()
 
