@@ -19,6 +19,7 @@ import array
 import draw565
 import os
 import warnings
+import random
 
 from machine import I2C
 from machine import Pin
@@ -52,8 +53,7 @@ class Accelerometer:
         self.reset()
 
     def accel_xyz(self):
-        # TODO randomly alter the values over time
-        return (0,0,0)
+        return (random.uniform(-100,100),random.uniform(-100,100),random.uniform(0,1000))
 
 class Backlight(object):
     def __init__(self, level=1):
