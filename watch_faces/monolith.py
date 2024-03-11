@@ -188,8 +188,6 @@ class MonolithApp():
           self._flashColon(False)
         else:
           #On-second tick to update every second
-          if(self._wordvars[_STOPWATCHRUN]==1):
-            self._longvars[_STOPWATCHTIME]+=1
           self._update()
           self._flashColon(True)
           self._lastnow = self._now
@@ -201,6 +199,10 @@ class MonolithApp():
         self._longvars[_TIMESTAMP] =  int(time.mktime(self._now))
         wasp.system.set_alarm(self._longvars[_TIMESTAMP]+1,self._wakeupcheck)
         wake=False
+
+        if(self._wordvars[_STOPWATCHRUN]==1):
+          self._longvars[_STOPWATCHTIME]+=1
+
 
         if(self._hrdata!=None):
           self._takeheartsamples()
