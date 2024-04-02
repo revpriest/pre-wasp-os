@@ -26,7 +26,7 @@ from matplotlib.lines import Line2D
 
 
 class Monographer(QMainWindow):
-    categories = ["mood","steps","heart","mile"]
+    categories = ["mile","mood","steps","heart"] #,"mile"
     theme = {
         'bg': (0.1,0.1,0.1),
         'bggraph': (0.16,0.15,0.16),
@@ -586,7 +586,7 @@ class Monographer(QMainWindow):
 
         self.console.expect('Exit console using Ctrl-X')
         time.sleep(0.5)
-        res = self.remote_execute("from shell import ls, cd, cat").strip()
+        res = self.remote_execute("from shell import ls, cd, cat, rm, rmdir").strip()
         time.sleep(0.5)
         res = self.remote_execute("from gc import collect").strip()
         time.sleep(0.5)
@@ -721,13 +721,13 @@ class SyncThread(QThread):
             print("Checking milestones")
             res = self.main.remote_execute("cd('/flash/logs/{:04d}/mile/')".format(year)).strip()
             time.sleep(1.1)
+            print("Listing existing")
             files = self.main.remote_execute("ls").strip().split("\n")
             for l in files:
                 fields = l.strip().split()
                 if(len(fields)>1):
-                    fn = "./logs/{:04d}/mile/{}".format(year,fields[1])
+                    fn = "/flash/logs/{:04d}/mile/{}".format(year,fields[1])
                     if(not os.path.exists(fn)):
-                        print("Doing "+fn)
                         os.mkdir(fn)
                         mfiles = self.main.remote_execute("ls ('"+fields[1]+"')").strip().split("\n")
                         for ll in mfiles:
@@ -741,6 +741,12 @@ class SyncThread(QThread):
                                     f.write(bunchoflines)
                             time.sleep(0.5)
                             res = self.main.remote_execute("collect()").strip()
+                    else:
+                        if(self.is_old(fields)):
+                            print("Deleting "+fn)
+                            self.delete_many(fn,fields)
+                        else:
+                            print("Leaving "+fn)
 
 
     def diff_files(self,year,mode,bunchoflines):
@@ -750,6 +756,7 @@ class SyncThread(QThread):
 
         #Get the current hard-drive side
         path = "./logs/{:04d}/{}/".format(year,mode)
+        print("Doing "+str(path))
         files_list = filter(lambda x : os.path.isfile(os.path.join(path,x)), os.listdir(path))
         existing = {}
         for f in files_list:
@@ -759,6 +766,7 @@ class SyncThread(QThread):
         #Compare
         lines = bunchoflines.split("\n")
         for l in lines:
+            print("Doing "+str(path)+":"+str(l))
             fields = l.strip().split()
             if(len(fields)>1):
                 if((not fields[1] in existing.keys())or(existing[fields[1]]!=int(fields[0]))):
@@ -766,10 +774,53 @@ class SyncThread(QThread):
                     self.sync_file(year,mode,fields[1])
                 else:
                     #print("Already got a good looking "+fields[1])
+                    if(self.is_old(fields)):
+                        self.del_file(year,mode,fields[1])
                     pass
                 self.scanned+=1
                 self.progress_updated.emit(self.scanned)
+      
+    def is_old(self,fields):
+        test_ts = int(datetime.strptime(fields[1][0:10], "%Y-%m-%d").timestamp())
+        now = int(datetime.now().timestamp())
+        diff = now - test_ts
+        if(diff>7*24*60*60):
+            return True
+        return False
+
+
+    def delete_many(self,fn,fields):
+        """ Delete all the sub-files and also the directory """
+        print("The fields are "+str(fields))
+        cmd = "ls ('"+fn+"')"
+        print("listing:"+str(cmd))
+        lines = self.main.remote_execute(cmd).strip().split("\n")
+        mfiles = self.main.remote_execute(cmd).strip().split("\n")
+        print("Fetched file list "+str(mfiles))
+        for ll in mfiles:
+            lf = ll.strip().split()
+            if(len(lf)>1):
+                cmd = "rm(\""+fn+"/"+lf[1]+"\")"
+                print("Deleting:"+cmd)
+                bunchoflines = self.main.remote_execute(cmd)
+                print(str(bunchoflines))
+        cmd = "rmdir(\""+fields[1]+"\")"
+        print("Deleting Dir:"+cmd)
+        bunchoflines = self.main.remote_execute(cmd)
+        print(str(bunchoflines))
         
+
+
+    def del_file(self,year,mode,fname):
+        """ Delete a file from the watch """
+        cmd = "rm(\""+("/flash/logs/{:04d}/{}/{}".format(year,mode,fname))+"\")"
+        print ("DELETING "+cmd)
+        bunchoflines = self.main.remote_execute(cmd)
+        bunchoflines = bunchoflines.replace('\r', '').strip()
+        if(mode!="steps"):
+            bunchoflines+="\n"
+        time.sleep(0.5)
+        self.main.remote_execute("collect()")
             
     def sync_file(self,year,mode,fname):
         cmd = "cat(\""+("/flash/logs/{:04d}/{}/{}".format(year,mode,fname))+"\")"
