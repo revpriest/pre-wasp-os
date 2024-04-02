@@ -975,6 +975,7 @@ class MonolithApp():
         self._longvars[_STEPSSINCE] = 0
         #We aren't supposed to do this here, this is just for test.
         self._logrotate()
+        self._load()
 
 
     #When to reset step-counter and rotate the logs in the apps that want it
@@ -1147,6 +1148,7 @@ class MonolithApp():
         wasp.watch.rtc.set_localtime(self._dateset)
         del(self._dateset)
         self._reset()
+        self._load()
         self._switchscreen(0)
     
 
