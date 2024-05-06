@@ -1,6 +1,11 @@
 This Fork
 =========
 
+TODO:
+* "back" in the Milestone app
+* "backdate" in the Milestone app
+* 
+
 We add a monolithic watch-face which has:
 
 * Clock

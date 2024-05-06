@@ -8,6 +8,8 @@ import json
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime, timedelta
+import pytz
+import tzlocal
 import io
 import time
 import pexpect
@@ -26,7 +28,7 @@ from matplotlib.lines import Line2D
 
 
 class Monographer(QMainWindow):
-    categories = ["mile","mood","steps","heart"] #,"mile"
+    categories = ["mood","steps","heart","mile"]
     theme = {
         'bg': (0.1,0.1,0.1),
         'bggraph': (0.16,0.15,0.16),
@@ -217,7 +219,7 @@ class Monographer(QMainWindow):
                                 metadata = json.load(file)
                                 for m in metadata:
                                     ets = m['ts']
-                                    matlibts = mdates.date2num(datetime.fromtimestamp(ets))
+                                    matlibts = mdates.date2num(datetime.fromtimestamp(ets,tz=tzlocal.get_localzone()))
                                     if(abs(matlibts - ts)<0.0005):
                                         self.dialog.setup(ets, self.graphdata['mood'][ts],m,self.redrawgraph)
                                         self.dialog.show()
@@ -225,8 +227,9 @@ class Monographer(QMainWindow):
                         except Exception as e:
                             #print("Excep:"+str(e))
                             pass
-                        
-                        ets = int(mdates.num2date(ts).timestamp())
+                       
+                        ets = int(mdates.num2date(ts,tz=tzlocal.get_localzone()).timestamp())
+                        print("Working out ets for "+str(ts)+" and it's "+str(ets)) 
                         self.dialog.setup(ets, self.graphdata['mood'][ts],{'text':"",'ts':ts},self.redrawgraph)
                         self.dialog.show()
                         break
@@ -524,8 +527,10 @@ class Monographer(QMainWindow):
           date_format = "%Y-%m-%d %H:%M"
         if(c==2):
           date_format = "%Y-%m-%d %H:%M:%S"
-        dt = datetime.strptime(dstring, date_format)
+        dt_wrong = datetime.strptime(dstring, date_format)
+        dt = dt_wrong.astimezone(tzlocal.get_localzone())
         date_num = mdates.date2num(dt)
+        print("parsed "+dstring+" to get "+str(date_num)+" from "+str(dt.timestamp()))
         return date_num
  
 
@@ -619,6 +624,7 @@ class Monographer(QMainWindow):
             self.actdialog.setup("Loading...")
             self.actdialog.show()
             res = self.remote_execute("cat('/flash/activities.csv')")
+
             res = "\n".join(res.strip().split("\n")[0].split(","))
             self.actdialog.setup(res)
         else:
@@ -1007,8 +1013,8 @@ class EditMetaDialog(QDialog):
             with open(fname, "r") as file:
                 metadata = json.load(file)
         except:
-            pass
             #print("no existing file?") 
+            pass
         found=False
         for i in range(0,len(metadata)):
             met = metadata[i]
@@ -1030,14 +1036,14 @@ class EditMetaDialog(QDialog):
             for i in range(0,len(lines)):
                 fields = lines[i].split(",")
                 if(len(fields)>1):
-                    test_ts = int(datetime.strptime(fields[0], "%Y-%m-%d %H:%M").timestamp())
-                    if(test_ts==self.ts):
+                    dt = datetime.strptime(fields[0], "%Y-%m-%d %H:%M")
+                    test_ts = int(dt.timestamp())
+                    date_num = mdates.date2num(dt)
+                    if(abs(test_ts-self.ts)<=10):
                         fields[1] = "{:0.2f}".format(self.event[0])
                         fields[2] = "{:0.2f}".format(self.event[1])
                         fields[3] = self.fix_str_size(self.event[2])
-                        lines[i] = ",".join(fields)
-                    else:
-                        lines[i] = ",".join(fields)
+                    lines[i] = ",".join(fields)
             newcontents = "\n".join(lines)
             with open(fname, 'w') as f:
                 f.write(newcontents)
