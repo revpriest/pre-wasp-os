@@ -474,7 +474,7 @@ class Monographer(QMainWindow):
                         contents+="\n"
                     self.append_graph_data(mode,contents,file)
 
-        print("Graph data for miles:"+str(self.graphdata['mile']))
+        #print("Graph data for miles:"+str(self.graphdata['mile']))
 
         # Update the text edit
         text_edit.setLineWrapMode(QTextEdit.NoWrap)  # Disable word wrapping
@@ -530,7 +530,6 @@ class Monographer(QMainWindow):
         dt_wrong = datetime.strptime(dstring, date_format)
         dt = dt_wrong.astimezone(tzlocal.get_localzone())
         date_num = mdates.date2num(dt)
-        print("parsed "+dstring+" to get "+str(date_num)+" from "+str(dt.timestamp()))
         return date_num
  
 
