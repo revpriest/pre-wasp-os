@@ -1,4 +1,13 @@
 #!/usr/bin/python3
+#
+# TODO:
+# * Should we be able to edit the timestamps on events? 
+#    ideally that'd just be like a drag in the graph I guess,
+#    but making the QLabel into a text-box ought to be possible
+#    and much easier?
+# * Split an event into two at a timestamp?
+#    Sometimes I just wanna retro-fill more detail.
+
 import os
 import sys
 import types
@@ -22,9 +31,6 @@ import matplotlib.patches as patches
 from matplotlib.lines import Line2D
 
 
-# TODO:
-# 1) Save should edit log as well as metadata
-# 2)
 
 
 class Monographer(QMainWindow):
@@ -888,14 +894,19 @@ class EditMetaDialog(QDialog):
         self.layout.addWidget(self.view)
 
         # Create some, QLineEdit boxes for editing values
+        self.start = QLabel(self)
+        self.end =   QLabel(self)
         self.happy = QLineEdit(self)
         self.awake = QLineEdit(self)
         self.category = QLineEdit(self)
+        self.layout.addWidget(self.start)
+        self.layout.addWidget(self.end)
         self.layout.addWidget(self.happy)
         self.layout.addWidget(self.awake)
         self.layout.addWidget(self.category)
 
         # Connect the textChanged signal to the redraw method
+#        self.end.textChanged.connect(self.redraw)
         self.happy.textChanged.connect(self.redraw)
         self.awake.textChanged.connect(self.redraw)
 
@@ -918,6 +929,12 @@ class EditMetaDialog(QDialog):
         self.meta = meta
         self.callback = callback
         self.meta['ts'] = ts
+        self.start.setText("From prior to:")
+
+        dt_object = datetime.fromtimestamp(ts)
+        formatted_time = dt_object.strftime('%Y-%m-%d %H:%M')
+
+        self.end.setText(formatted_time)
         self.happy.setText(str(event[0]))
         self.awake.setText(str(event[1]))
         self.category.setText(str(event[2].strip()))

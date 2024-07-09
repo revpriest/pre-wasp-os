@@ -2,9 +2,14 @@ This Fork
 =========
 
 TODO:
+* Not really happy with Milestone app
 * "back" in the Milestone app
 * "backdate" in the Milestone app
+* Why does it not always reset at 4am?
+* Blank the steps-count display during reset as steps drop to 0
+* Edit event dates in monographer
 * 
+
 
 We add a monolithic watch-face which has:
 
